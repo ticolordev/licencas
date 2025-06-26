@@ -28,8 +28,22 @@ export function Microsoft365Dashboard() {
 
   const handleDeletePool = (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este pool de licenças?')) {
+      // Remove users assigned to this pool
+      const usersWithThisLicense = state.microsoft365Users.filter(user => 
+        user.assignedLicenses.includes(id)
+      );
+      
+      usersWithThisLicense.forEach(user => {
+        const updatedUser = {
+          ...user,
+          assignedLicenses: user.assignedLicenses.filter(licenseId => licenseId !== id)
+        };
+        dispatch({ type: 'UPDATE_M365_USER', payload: updatedUser });
+      });
+
       dispatch({ type: 'DELETE_M365_POOL', payload: id });
       toast.success('Pool de licenças excluído com sucesso!');
+      updatePoolAvailability();
     }
   };
 
@@ -78,11 +92,17 @@ export function Microsoft365Dashboard() {
     return pool?.licenseType || 'Licença não encontrada';
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
+  const isExpired = (expirationDate?: string) => {
+    if (!expirationDate) return false;
+    return new Date(expirationDate) < new Date();
+  };
+
+  const isExpiringSoon = (expirationDate?: string) => {
+    if (!expirationDate) return false;
+    const expiration = new Date(expirationDate);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    return expiration <= thirtyDaysFromNow && expiration >= new Date();
   };
 
   return (
@@ -101,71 +121,81 @@ export function Microsoft365Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {state.microsoft365Pools.map((pool) => (
-            <Card key={pool.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-700">
-                    {pool.licenseType}
-                  </CardTitle>
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditPool(pool)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeletePool(pool.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+          {state.microsoft365Pools.map((pool) => {
+            const expired = isExpired(pool.expirationDate);
+            const expiringSoon = isExpiringSoon(pool.expirationDate);
+            const expiredLicenses = expired ? pool.totalLicenses : 0;
+            
+            return (
+              <Card key={pool.id} className={`hover:shadow-md transition-shadow ${
+                expired ? 'border-red-300 bg-red-50' : 
+                expiringSoon ? 'border-orange-300 bg-orange-50' : ''
+              }`}>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-gray-900">{pool.totalLicenses}</span>
-                    <Badge variant="outline" className="text-xs">
-                      <Package className="h-3 w-3 mr-1" />
-                      Total
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Atribuídas:</span>
-                      <span className="font-medium text-blue-600">{pool.assignedLicenses}</span>
+                    <CardTitle className="text-sm font-medium text-gray-700">
+                      {pool.licenseType}
+                    </CardTitle>
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditPool(pool)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletePool(pool.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Disponíveis:</span>
-                      <span className="font-medium text-green-600">{pool.availableLicenses}</span>
-                    </div>
                   </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-gray-900">{pool.totalLicenses}</span>
+                      <Badge variant="outline" className="text-xs">
+                        <Package className="h-3 w-3 mr-1" />
+                        Total
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-blue-50 p-2 rounded">
+                        <div className="text-sm font-semibold text-blue-600">{pool.assignedLicenses}</div>
+                        <div className="text-xs text-blue-700">Atribuídas</div>
+                      </div>
+                      <div className="bg-green-50 p-2 rounded">
+                        <div className="text-sm font-semibold text-green-600">{pool.availableLicenses}</div>
+                        <div className="text-xs text-green-700">Disponíveis</div>
+                      </div>
+                      <div className="bg-red-50 p-2 rounded">
+                        <div className="text-sm font-semibold text-red-600">{expiredLicenses}</div>
+                        <div className="text-xs text-red-700">Expiradas</div>
+                      </div>
+                    </div>
 
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${pool.totalLicenses > 0 ? (pool.assignedLicenses / pool.totalLicenses) * 100 : 0}%`
-                      }}
-                    />
-                  </div>
-
-                  {pool.cost && pool.cost > 0 && (
-                    <div className="text-sm text-gray-600">
-                      {formatCurrency(pool.cost)} por licença
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          expired ? 'bg-red-500' : 
+                          expiringSoon ? 'bg-orange-500' : 'bg-blue-600'
+                        }`}
+                        style={{
+                          width: `${pool.totalLicenses > 0 ? (pool.assignedLicenses / pool.totalLicenses) * 100 : 0}%`
+                        }}
+                      />
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -225,7 +255,10 @@ export function Microsoft365Dashboard() {
                           </div>
                         </td>
                         <td className="p-4">
-                          <Badge variant={user.isActive ? 'default' : 'secondary'}>
+                          <Badge 
+                            variant={user.isActive ? 'default' : 'secondary'}
+                            className={user.isActive ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-red-100 text-red-800 border-red-200'}
+                          >
                             {user.isActive ? 'Ativo' : 'Inativo'}
                           </Badge>
                         </td>

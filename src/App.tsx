@@ -5,6 +5,7 @@ import { Dashboard } from '@/components/dashboard/Dashboard';
 import { LicenseTable } from '@/components/licenses/LicenseTable';
 import { LicenseModal } from '@/components/licenses/LicenseModal';
 import { Microsoft365Dashboard } from '@/components/microsoft365/Microsoft365Dashboard';
+import { LicenseListDashboard } from '@/components/licenses/LicenseListDashboard';
 import { LicenseProvider, useLicense } from '@/contexts/LicenseContext';
 import { License } from '@/types/license';
 import { mockLicenses, mockMicrosoft365Pools, mockMicrosoft365Users } from '@/data/mockData';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 const categoryTitles = {
   dashboard: 'Dashboard',
   microsoft365: 'Licenças Microsoft 365',
+  licenseList: 'Lista de Licenças',
   sophos: 'Licenças Sophos',
   server: 'Licenças de Servidores',
   windows: 'Licenças Windows',
@@ -85,6 +87,8 @@ function AppContent() {
         return <Dashboard />;
       case 'microsoft365':
         return <Microsoft365Dashboard />;
+      case 'licenseList':
+        return <LicenseListDashboard />;
       default:
         return (
           <LicenseTable
@@ -98,7 +102,7 @@ function AppContent() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={toggleMobileSidebar} />
@@ -115,7 +119,7 @@ function AppContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <Header
           searchTerm={state.searchTerm}
           onSearchChange={handleSearchChange}
@@ -130,7 +134,7 @@ function AppContent() {
       </div>
 
       {/* License Modal */}
-      {state.selectedCategory !== 'microsoft365' && (
+      {!['microsoft365', 'licenseList'].includes(state.selectedCategory) && (
         <LicenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

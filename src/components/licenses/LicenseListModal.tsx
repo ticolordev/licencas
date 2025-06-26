@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Microsoft365LicensePool } from '@/types/license';
 
-interface Microsoft365PoolModalProps {
+interface LicenseListModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (pool: Partial<Microsoft365LicensePool>) => void;
@@ -23,7 +23,7 @@ const licenseTypes = [
   'Power BI Pro'
 ];
 
-export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microsoft365PoolModalProps) {
+export function LicenseListModal({ isOpen, onClose, onSave, pool }: LicenseListModalProps) {
   const [formData, setFormData] = useState<Partial<Microsoft365LicensePool>>({
     licenseType: 'Microsoft 365 Business Standard',
     totalLicenses: 0,
@@ -76,7 +76,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">
-            {pool ? 'Editar Pool de Licenças' : 'Novo Pool de Licenças'}
+            {pool ? 'Editar Licença' : 'Nova Licença'}
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -131,7 +131,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
               id="notes"
               value={formData.notes || ''}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Observações sobre este pool de licenças"
+              placeholder="Observações sobre esta licença"
               rows={3}
             />
           </div>
@@ -141,7 +141,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
               Cancelar
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              {pool ? 'Atualizar' : 'Criar'} Pool
+              {pool ? 'Atualizar' : 'Criar'} Licença
             </Button>
           </div>
         </form>
