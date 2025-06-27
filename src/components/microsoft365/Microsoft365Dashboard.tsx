@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Package, Edit, Trash2 } from 'lucide-react';
+import { Plus, Users, Package, Edit, Trash2, List, Calendar, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -105,105 +105,140 @@ export function Microsoft365Dashboard() {
     return expiration <= thirtyDaysFromNow && expiration >= new Date();
   };
 
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Sem data';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Pools de Licenças */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Pools de Licenças</h2>
-            <p className="text-sm text-gray-500">Gerencie os pools de licenças disponíveis</p>
-          </div>
-          <Button onClick={handleAddPool} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Pool
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {state.microsoft365Pools.map((pool) => {
-            const expired = isExpired(pool.expirationDate);
-            const expiringSoon = isExpiringSoon(pool.expirationDate);
-            const expiredLicenses = expired ? pool.totalLicenses : 0;
-            
-            return (
-              <Card key={pool.id} className={`hover:shadow-md transition-shadow ${
-                expired ? 'border-red-300 bg-red-50' : 
-                expiringSoon ? 'border-orange-300 bg-orange-50' : ''
-              }`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-gray-700">
-                      {pool.licenseType}
-                    </CardTitle>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditPool(pool)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePool(pool.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-gray-900">{pool.totalLicenses}</span>
-                      <Badge variant="outline" className="text-xs">
-                        <Package className="h-3 w-3 mr-1" />
-                        Total
-                      </Badge>
-                    </div>
+    <div className="flex gap-6 h-full">
+      {/* Lista de Licenças - Sidebar */}
+      <div className="w-80 flex-shrink-0">
+        <Card className="h-full">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold flex items-center">
+                <List className="h-5 w-5 mr-2" />
+                Lista de Licenças
+              </CardTitle>
+              <Button onClick={handleAddPool} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+              {state.microsoft365Pools.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  <p className="mb-2">Nenhuma licença cadastrada</p>
+                  <Button onClick={handleAddPool} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Licença
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2 p-4">
+                  {state.microsoft365Pools.map((pool) => {
+                    const expired = isExpired(pool.expirationDate);
+                    const expiringSoon = isExpiringSoon(pool.expirationDate);
+                    const expiredLicenses = expired ? pool.totalLicenses : 0;
                     
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-blue-50 p-2 rounded">
-                        <div className="text-sm font-semibold text-blue-600">{pool.assignedLicenses}</div>
-                        <div className="text-xs text-blue-700">Atribuídas</div>
-                      </div>
-                      <div className="bg-green-50 p-2 rounded">
-                        <div className="text-sm font-semibold text-green-600">{pool.availableLicenses}</div>
-                        <div className="text-xs text-green-700">Disponíveis</div>
-                      </div>
-                      <div className="bg-red-50 p-2 rounded">
-                        <div className="text-sm font-semibold text-red-600">{expiredLicenses}</div>
-                        <div className="text-xs text-red-700">Expiradas</div>
-                      </div>
-                    </div>
-
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    return (
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          expired ? 'bg-red-500' : 
-                          expiringSoon ? 'bg-orange-500' : 'bg-blue-600'
+                        key={pool.id}
+                        className={`p-3 rounded-lg border transition-colors ${
+                          expired ? 'border-red-300 bg-red-50' : 
+                          expiringSoon ? 'border-orange-300 bg-orange-50' : 
+                          'border-gray-200 bg-white hover:bg-gray-50'
                         }`}
-                        style={{
-                          width: `${pool.totalLicenses > 0 ? (pool.assignedLicenses / pool.totalLicenses) * 100 : 0}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm text-gray-900 truncate">
+                              {pool.licenseType}
+                            </h4>
+                            {(expired || expiringSoon) && (
+                              <div className="flex items-center space-x-1 mt-1">
+                                <AlertTriangle className={`h-3 w-3 ${expired ? 'text-red-500' : 'text-orange-500'}`} />
+                                <span className={`text-xs font-medium ${expired ? 'text-red-700' : 'text-orange-700'}`}>
+                                  {expired ? 'Expirada' : 'Expirando'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-1 ml-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditPool(pool)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePool(pool.id)}
+                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="text-center mb-2">
+                          <div className="text-lg font-bold text-gray-900">{pool.totalLicenses}</div>
+                          <div className="text-xs text-gray-500">Total</div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-1 text-center mb-2">
+                          <div className="bg-blue-50 p-1 rounded">
+                            <div className="text-xs font-semibold text-blue-600">{pool.assignedLicenses}</div>
+                            <div className="text-xs text-blue-700">Atrib.</div>
+                          </div>
+                          <div className="bg-green-50 p-1 rounded">
+                            <div className="text-xs font-semibold text-green-600">{pool.availableLicenses}</div>
+                            <div className="text-xs text-green-700">Disp.</div>
+                          </div>
+                          <div className="bg-red-50 p-1 rounded">
+                            <div className="text-xs font-semibold text-red-600">{expiredLicenses}</div>
+                            <div className="text-xs text-red-700">Exp.</div>
+                          </div>
+                        </div>
+
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
+                          <div
+                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                              expired ? 'bg-red-500' : 
+                              expiringSoon ? 'bg-orange-500' : 'bg-blue-600'
+                            }`}
+                            style={{
+                              width: `${pool.totalLicenses > 0 ? (pool.assignedLicenses / pool.totalLicenses) * 100 : 0}%`
+                            }}
+                          />
+                        </div>
+
+                        {pool.expirationDate && (
+                          <div className="flex items-center justify-center text-xs text-gray-600">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {formatDate(pool.expirationDate)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Usuários */}
-      <div>
+      {/* Main Content - Usuários */}
+      <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Usuários</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Usuários Microsoft 365</h2>
             <p className="text-sm text-gray-500">Gerencie os usuários e suas licenças atribuídas</p>
           </div>
           <Button onClick={handleAddUser} className="bg-green-600 hover:bg-green-700">

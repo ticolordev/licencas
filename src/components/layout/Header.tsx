@@ -14,7 +14,6 @@ interface HeaderProps {
 const categoryLabels = {
   dashboard: 'Dashboard',
   microsoft365: 'Licenças Microsoft 365',
-  licenseList: 'Lista de Licenças',
   sophos: 'Licenças Sophos',
   server: 'Licenças de Servidores',
   windows: 'Licenças Windows',
@@ -50,7 +49,7 @@ export function Header({
         </div>
         
         <div className="flex items-center space-x-4">
-          {!['dashboard', 'microsoft365', 'licenseList'].includes(selectedCategory) && (
+          {!['dashboard', 'microsoft365'].includes(selectedCategory) && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -62,7 +61,7 @@ export function Header({
             </div>
           )}
           
-          {!['dashboard', 'microsoft365', 'licenseList'].includes(selectedCategory) && (
+          {!['dashboard', 'microsoft365'].includes(selectedCategory) && (
             <Button onClick={onAddLicense} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Licença

@@ -5,7 +5,6 @@ import { Dashboard } from '@/components/dashboard/Dashboard';
 import { LicenseTable } from '@/components/licenses/LicenseTable';
 import { LicenseModal } from '@/components/licenses/LicenseModal';
 import { Microsoft365Dashboard } from '@/components/microsoft365/Microsoft365Dashboard';
-import { LicenseListDashboard } from '@/components/licenses/LicenseListDashboard';
 import { LicenseProvider, useLicense } from '@/contexts/LicenseContext';
 import { License } from '@/types/license';
 import { mockLicenses, mockMicrosoft365Pools, mockMicrosoft365Users } from '@/data/mockData';
@@ -15,7 +14,6 @@ import { toast } from 'sonner';
 const categoryTitles = {
   dashboard: 'Dashboard',
   microsoft365: 'Licenças Microsoft 365',
-  licenseList: 'Lista de Licenças',
   sophos: 'Licenças Sophos',
   server: 'Licenças de Servidores',
   windows: 'Licenças Windows',
@@ -87,8 +85,6 @@ function AppContent() {
         return <Dashboard />;
       case 'microsoft365':
         return <Microsoft365Dashboard />;
-      case 'licenseList':
-        return <LicenseListDashboard />;
       default:
         return (
           <LicenseTable
@@ -134,7 +130,7 @@ function AppContent() {
       </div>
 
       {/* License Modal */}
-      {!['microsoft365', 'licenseList'].includes(state.selectedCategory) && (
+      {!['microsoft365'].includes(state.selectedCategory) && (
         <LicenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

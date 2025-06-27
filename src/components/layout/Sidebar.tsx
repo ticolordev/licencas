@@ -6,8 +6,7 @@ import {
   Server, 
   Monitor,
   ChevronLeft,
-  ChevronRight,
-  List
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,11 +28,6 @@ const menuItems = [
     id: 'microsoft365',
     label: 'Microsoft 365',
     icon: Users,
-  },
-  {
-    id: 'licenseList',
-    label: 'Lista de Licenças',
-    icon: List,
   },
   {
     id: 'sophos',
