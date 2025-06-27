@@ -23,7 +23,8 @@ type LicenseAction =
   | { type: 'ADD_M365_USER'; payload: Microsoft365User }
   | { type: 'UPDATE_M365_USER'; payload: Microsoft365User }
   | { type: 'DELETE_M365_USER'; payload: string }
-  | { type: 'LOAD_M365_USERS'; payload: Microsoft365User[] };
+  | { type: 'LOAD_M365_USERS'; payload: Microsoft365User[] }
+  | { type: 'UPDATE_POOL_AVAILABILITY' };
 
 const initialState: LicenseState = {
   licenses: [],
@@ -119,6 +120,23 @@ function licenseReducer(state: LicenseState, action: LicenseAction): LicenseStat
         ...state,
         microsoft365Users: action.payload,
       };
+    case 'UPDATE_POOL_AVAILABILITY':
+      const updatedPools = state.microsoft365Pools.map(pool => {
+        const assignedCount = state.microsoft365Users.filter(user => 
+          user.assignedLicenses.includes(pool.id) && user.isActive
+        ).length;
+        
+        return {
+          ...pool,
+          assignedLicenses: assignedCount,
+          availableLicenses: pool.totalLicenses - assignedCount
+        };
+      });
+      
+      return {
+        ...state,
+        microsoft365Pools: updatedPools,
+      };
     default:
       return state;
   }
@@ -128,21 +146,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(licenseReducer, initialState);
 
   const updatePoolAvailability = () => {
-    const updatedPools = state.microsoft365Pools.map(pool => {
-      const assignedCount = state.microsoft365Users.filter(user => 
-        user.assignedLicenses.includes(pool.id) && user.isActive
-      ).length;
-      
-      return {
-        ...pool,
-        assignedLicenses: assignedCount,
-        availableLicenses: pool.totalLicenses - assignedCount
-      };
-    });
-
-    updatedPools.forEach(pool => {
-      dispatch({ type: 'UPDATE_M365_POOL', payload: pool });
-    });
+    dispatch({ type: 'UPDATE_POOL_AVAILABILITY' });
   };
 
   const getStats = (): Record<string, LicenseStats> => {

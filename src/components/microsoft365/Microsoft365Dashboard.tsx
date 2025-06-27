@@ -110,24 +110,160 @@ export function Microsoft365Dashboard() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  // Calcular totais por tipo de licença
+  const getLicenseTotals = () => {
+    const totals: Record<string, number> = {};
+    state.microsoft365Pools.forEach(pool => {
+      totals[pool.licenseType] = (totals[pool.licenseType] || 0) + pool.totalLicenses;
+    });
+    return totals;
+  };
+
+  const licenseTotals = getLicenseTotals();
+
   return (
-    <div className="flex gap-6 h-full">
-      {/* Lista de Licenças - Sidebar */}
-      <div className="w-80 flex-shrink-0">
-        <Card className="h-full">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold flex items-center">
-                <List className="h-5 w-5 mr-2" />
-                Lista de Licenças
-              </CardTitle>
-              <Button onClick={handleAddPool} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4" />
-              </Button>
+    <div className="space-y-6">
+      {/* Dashboard de Totais */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo de Licenças</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(licenseTotals).map(([licenseType, total]) => (
+            <Card key={licenseType} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-700 flex items-center">
+                  <Package className="h-4 w-4 mr-2 text-blue-600" />
+                  {licenseType}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">{total}</div>
+                <div className="text-xs text-gray-500">Total de licenças</div>
+              </CardContent>
+            </Card>
+          ))}
+          {Object.keys(licenseTotals).length === 0 && (
+            <Card className="col-span-full">
+              <CardContent className="text-center py-8">
+                <p className="text-gray-500 mb-4">Nenhuma licença cadastrada</p>
+                <Button onClick={handleAddPool} className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Primeira Licença
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Layout Principal */}
+      <div className="flex gap-6">
+        {/* Usuários - Esquerda */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Usuários</h2>
+              <p className="text-sm text-gray-500">Gerencie os usuários e suas licenças atribuídas</p>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+            <Button onClick={handleAddUser} className="bg-green-600 hover:bg-green-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Usuário
+            </Button>
+          </div>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left p-4 font-medium text-gray-700">Usuário</th>
+                      <th className="text-left p-4 font-medium text-gray-700">Email</th>
+                      <th className="text-left p-4 font-medium text-gray-700">Licenças Atribuídas</th>
+                      <th className="text-left p-4 font-medium text-gray-700">Status</th>
+                      <th className="text-right p-4 font-medium text-gray-700">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.microsoft365Users.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-8 text-gray-500">
+                          Nenhum usuário cadastrado
+                        </td>
+                      </tr>
+                    ) : (
+                      state.microsoft365Users.map((user) => (
+                        <tr key={user.id} className="border-b hover:bg-gray-50">
+                          <td className="p-4">
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 text-gray-400 mr-2" />
+                              <span className="font-medium text-gray-900">{user.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-gray-600">{user.email}</td>
+                          <td className="p-4">
+                            <div className="flex flex-wrap gap-1">
+                              {user.assignedLicenses.map((licenseId) => (
+                                <Badge key={licenseId} variant="secondary" className="text-xs">
+                                  {getLicenseTypeName(licenseId)}
+                                </Badge>
+                              ))}
+                              {user.assignedLicenses.length === 0 && (
+                                <span className="text-gray-400 text-sm">Nenhuma licença</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <Badge 
+                              variant={user.isActive ? 'default' : 'secondary'}
+                              className={user.isActive ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-red-100 text-red-800 border-red-200'}
+                            >
+                              {user.isActive ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditUser(user)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Lista de Licenças - Direita */}
+        <div className="w-80 flex-shrink-0">
+          <Card className="h-fit">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold flex items-center">
+                  <List className="h-5 w-5 mr-2" />
+                  Lista de Licenças
+                </CardTitle>
+                <Button onClick={handleAddPool} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
               {state.microsoft365Pools.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   <p className="mb-2">Nenhuma licença cadastrada</p>
@@ -137,34 +273,35 @@ export function Microsoft365Dashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2 p-4">
+                <div className="divide-y divide-gray-200">
                   {state.microsoft365Pools.map((pool) => {
                     const expired = isExpired(pool.expirationDate);
                     const expiringSoon = isExpiringSoon(pool.expirationDate);
-                    const expiredLicenses = expired ? pool.totalLicenses : 0;
                     
                     return (
-                      <div
-                        key={pool.id}
-                        className={`p-3 rounded-lg border transition-colors ${
-                          expired ? 'border-red-300 bg-red-50' : 
-                          expiringSoon ? 'border-orange-300 bg-orange-50' : 
-                          'border-gray-200 bg-white hover:bg-gray-50'
-                        }`}
-                      >
+                      <div key={pool.id} className="p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-sm text-gray-900 truncate">
                               {pool.licenseType}
                             </h4>
-                            {(expired || expiringSoon) && (
-                              <div className="flex items-center space-x-1 mt-1">
-                                <AlertTriangle className={`h-3 w-3 ${expired ? 'text-red-500' : 'text-orange-500'}`} />
-                                <span className={`text-xs font-medium ${expired ? 'text-red-700' : 'text-orange-700'}`}>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className="text-sm text-gray-600">
+                                Qtd: <span className="font-semibold">{pool.totalLicenses}</span>
+                              </span>
+                              {(expired || expiringSoon) && (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${expired ? 'text-red-600 border-red-300' : 'text-orange-600 border-orange-300'}`}
+                                >
                                   {expired ? 'Expirada' : 'Expirando'}
-                                </span>
-                              </div>
-                            )}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center mt-1 text-xs text-gray-500">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {formatDate(pool.expirationDate)}
+                            </div>
                           </div>
                           <div className="flex items-center space-x-1 ml-2">
                             <Button
@@ -185,145 +322,14 @@ export function Microsoft365Dashboard() {
                             </Button>
                           </div>
                         </div>
-                        
-                        <div className="text-center mb-2">
-                          <div className="text-lg font-bold text-gray-900">{pool.totalLicenses}</div>
-                          <div className="text-xs text-gray-500">Total</div>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-1 text-center mb-2">
-                          <div className="bg-blue-50 p-1 rounded">
-                            <div className="text-xs font-semibold text-blue-600">{pool.assignedLicenses}</div>
-                            <div className="text-xs text-blue-700">Atrib.</div>
-                          </div>
-                          <div className="bg-green-50 p-1 rounded">
-                            <div className="text-xs font-semibold text-green-600">{pool.availableLicenses}</div>
-                            <div className="text-xs text-green-700">Disp.</div>
-                          </div>
-                          <div className="bg-red-50 p-1 rounded">
-                            <div className="text-xs font-semibold text-red-600">{expiredLicenses}</div>
-                            <div className="text-xs text-red-700">Exp.</div>
-                          </div>
-                        </div>
-
-                        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2">
-                          <div
-                            className={`h-1.5 rounded-full transition-all duration-300 ${
-                              expired ? 'bg-red-500' : 
-                              expiringSoon ? 'bg-orange-500' : 'bg-blue-600'
-                            }`}
-                            style={{
-                              width: `${pool.totalLicenses > 0 ? (pool.assignedLicenses / pool.totalLicenses) * 100 : 0}%`
-                            }}
-                          />
-                        </div>
-
-                        {pool.expirationDate && (
-                          <div className="flex items-center justify-center text-xs text-gray-600">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {formatDate(pool.expirationDate)}
-                          </div>
-                        )}
                       </div>
                     );
                   })}
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content - Usuários */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Usuários Microsoft 365</h2>
-            <p className="text-sm text-gray-500">Gerencie os usuários e suas licenças atribuídas</p>
-          </div>
-          <Button onClick={handleAddUser} className="bg-green-600 hover:bg-green-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Usuário
-          </Button>
+            </CardContent>
+          </Card>
         </div>
-
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="text-left p-4 font-medium text-gray-700">Usuário</th>
-                    <th className="text-left p-4 font-medium text-gray-700">Email</th>
-                    <th className="text-left p-4 font-medium text-gray-700">Licenças Atribuídas</th>
-                    <th className="text-left p-4 font-medium text-gray-700">Status</th>
-                    <th className="text-right p-4 font-medium text-gray-700">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {state.microsoft365Users.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="text-center py-8 text-gray-500">
-                        Nenhum usuário cadastrado
-                      </td>
-                    </tr>
-                  ) : (
-                    state.microsoft365Users.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4">
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="font-medium text-gray-900">{user.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-4 text-gray-600">{user.email}</td>
-                        <td className="p-4">
-                          <div className="flex flex-wrap gap-1">
-                            {user.assignedLicenses.map((licenseId) => (
-                              <Badge key={licenseId} variant="secondary" className="text-xs">
-                                {getLicenseTypeName(licenseId)}
-                              </Badge>
-                            ))}
-                            {user.assignedLicenses.length === 0 && (
-                              <span className="text-gray-400 text-sm">Nenhuma licença</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <Badge 
-                            variant={user.isActive ? 'default' : 'secondary'}
-                            className={user.isActive ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-red-100 text-red-800 border-red-200'}
-                          >
-                            {user.isActive ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteUser(user.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Modals */}
