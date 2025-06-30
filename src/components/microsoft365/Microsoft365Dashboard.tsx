@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Package, Edit, Trash2, List, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Users, Package, Edit, Trash2, List, Calendar, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,17 @@ import { Microsoft365UserModal } from './Microsoft365UserModal';
 import { Microsoft365LicensePool, Microsoft365User } from '@/types/license';
 import { toast } from 'sonner';
 
+type SortField = 'name' | 'email' | 'assignedLicenses' | 'isActive';
+type SortDirection = 'asc' | 'desc';
+
 export function Microsoft365Dashboard() {
   const { state, dispatch, updatePoolAvailability } = useLicense();
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingPool, setEditingPool] = useState<Microsoft365LicensePool | null>(null);
   const [editingUser, setEditingUser] = useState<Microsoft365User | null>(null);
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const handleAddPool = () => {
     setEditingPool(null);
@@ -131,30 +136,106 @@ export function Microsoft365Dashboard() {
 
   const licenseTotals = getLicenseTotals();
 
+  // Função para ordenar usuários
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedUsers = () => {
+    return [...state.microsoft365Users].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'assignedLicenses':
+          aValue = a.assignedLicenses.length;
+          bValue = b.assignedLicenses.length;
+          break;
+        case 'isActive':
+          aValue = a.isActive ? 1 : 0;
+          bValue = b.isActive ? 1 : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="h-4 w-4 ml-1" /> : 
+      <ChevronDown className="h-4 w-4 ml-1" />;
+  };
+
   return (
     <div className="space-y-6">
       {/* Dashboard de Totais - Quadrados Menores */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo de Licenças</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {Object.entries(licenseTotals).map(([licenseType, stats]) => (
-            <Card key={licenseType} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-medium text-gray-700 flex items-center">
-                  <Package className="h-3 w-3 mr-1 text-blue-600" />
-                  <span className="truncate">{licenseType}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                <div className="text-lg font-bold text-gray-900">{stats.total}</div>
-                <div className="text-xs text-gray-600">Total</div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-green-600">Atrib: {stats.assigned}</span>
-                  <span className="text-blue-600">Disp: {stats.available}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {Object.entries(licenseTotals).map(([licenseType, stats]) => {
+            const pool = state.microsoft365Pools.find(p => p.licenseType === licenseType);
+            return (
+              <Card key={licenseType} className="hover:shadow-md transition-shadow group">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-medium text-gray-700 flex items-center">
+                      <Package className="h-3 w-3 mr-1 text-blue-600" />
+                      <span className="truncate">{licenseType}</span>
+                    </CardTitle>
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {pool && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditPool(pool)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeletePool(pool.id)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  <div className="text-lg font-bold text-gray-900">{stats.total}</div>
+                  <div className="text-xs text-gray-600">Total</div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-green-600">Atrib: {stats.assigned}</span>
+                    <span className="text-blue-600">Disp: {stats.available}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
           {Object.keys(licenseTotals).length === 0 && (
             <Card className="col-span-full">
               <CardContent className="text-center py-8">
@@ -190,22 +271,54 @@ export function Microsoft365Dashboard() {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium text-gray-700">Usuário</th>
-                      <th className="text-left p-4 font-medium text-gray-700">Email</th>
-                      <th className="text-left p-4 font-medium text-gray-700">Licenças Atribuídas</th>
-                      <th className="text-left p-4 font-medium text-gray-700">Status</th>
+                      <th 
+                        className="text-left p-4 font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => handleSort('name')}
+                      >
+                        <div className="flex items-center">
+                          Usuário
+                          <SortIcon field="name" />
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left p-4 font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => handleSort('email')}
+                      >
+                        <div className="flex items-center">
+                          Email
+                          <SortIcon field="email" />
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left p-4 font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => handleSort('assignedLicenses')}
+                      >
+                        <div className="flex items-center">
+                          Licenças Atribuídas
+                          <SortIcon field="assignedLicenses" />
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left p-4 font-medium text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                        onClick={() => handleSort('isActive')}
+                      >
+                        <div className="flex items-center">
+                          Status
+                          <SortIcon field="isActive" />
+                        </div>
+                      </th>
                       <th className="text-right p-4 font-medium text-gray-700">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {state.microsoft365Users.length === 0 ? (
+                    {getSortedUsers().length === 0 ? (
                       <tr>
                         <td colSpan={5} className="text-center py-8 text-gray-500">
                           Nenhum usuário cadastrado
                         </td>
                       </tr>
                     ) : (
-                      state.microsoft365Users.map((user) => (
+                      getSortedUsers().map((user) => (
                         <tr key={user.id} className="border-b hover:bg-gray-50">
                           <td className="p-4">
                             <div className="flex items-center">
