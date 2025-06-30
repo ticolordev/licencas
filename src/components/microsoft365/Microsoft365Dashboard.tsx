@@ -110,12 +110,22 @@ export function Microsoft365Dashboard() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  // Calcular totais por tipo de licença
+  // Calcular totais por tipo de licença baseado nos usuários ativos
   const getLicenseTotals = () => {
-    const totals: Record<string, number> = {};
+    const totals: Record<string, { total: number; assigned: number; available: number }> = {};
+    
     state.microsoft365Pools.forEach(pool => {
-      totals[pool.licenseType] = (totals[pool.licenseType] || 0) + pool.totalLicenses;
+      const assignedCount = state.microsoft365Users.filter(user => 
+        user.assignedLicenses.includes(pool.id) && user.isActive
+      ).length;
+      
+      totals[pool.licenseType] = {
+        total: pool.totalLicenses,
+        assigned: assignedCount,
+        available: pool.totalLicenses - assignedCount
+      };
     });
+    
     return totals;
   };
 
@@ -123,21 +133,25 @@ export function Microsoft365Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Dashboard de Totais */}
+      {/* Dashboard de Totais - Quadrados Menores */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo de Licenças</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(licenseTotals).map(([licenseType, total]) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {Object.entries(licenseTotals).map(([licenseType, stats]) => (
             <Card key={licenseType} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-700 flex items-center">
-                  <Package className="h-4 w-4 mr-2 text-blue-600" />
-                  {licenseType}
+                <CardTitle className="text-xs font-medium text-gray-700 flex items-center">
+                  <Package className="h-3 w-3 mr-1 text-blue-600" />
+                  <span className="truncate">{licenseType}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{total}</div>
-                <div className="text-xs text-gray-500">Total de licenças</div>
+              <CardContent className="space-y-1">
+                <div className="text-lg font-bold text-gray-900">{stats.total}</div>
+                <div className="text-xs text-gray-600">Total</div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-600">Atrib: {stats.assigned}</span>
+                  <span className="text-blue-600">Disp: {stats.available}</span>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -277,6 +291,9 @@ export function Microsoft365Dashboard() {
                   {state.microsoft365Pools.map((pool) => {
                     const expired = isExpired(pool.expirationDate);
                     const expiringSoon = isExpiringSoon(pool.expirationDate);
+                    const assignedCount = state.microsoft365Users.filter(user => 
+                      user.assignedLicenses.includes(pool.id) && user.isActive
+                    ).length;
                     
                     return (
                       <div key={pool.id} className="p-4 hover:bg-gray-50 transition-colors">

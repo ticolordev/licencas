@@ -155,9 +155,13 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
 
     types.forEach((type) => {
       if (type === 'microsoft365') {
-        const totalUsers = state.microsoft365Users.length;
-        const activeUsers = state.microsoft365Users.filter(user => user.isActive).length;
-        const inactiveUsers = totalUsers - activeUsers;
+        // Calcular baseado nos pools e usuários ativos
+        const totalLicenses = state.microsoft365Pools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
+        const assignedLicenses = state.microsoft365Users.reduce((sum, user) => {
+          if (!user.isActive) return sum;
+          return sum + user.assignedLicenses.length;
+        }, 0);
+        const inactiveUsers = state.microsoft365Users.filter(user => !user.isActive).length;
         
         // Check for pools expiring in the next 30 days
         const thirtyDaysFromNow = new Date();
@@ -169,9 +173,9 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         }).length;
 
         stats[type] = {
-          total: totalUsers,
-          active: activeUsers,
-          inactive: inactiveUsers,
+          total: totalLicenses,
+          active: assignedLicenses,
+          inactive: totalLicenses - assignedLicenses,
           expiringSoon: expiringSoon,
         };
       } else {
