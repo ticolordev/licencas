@@ -37,6 +37,11 @@ function AppContent() {
     }, 100);
   }, [dispatch, updatePoolAvailability]);
 
+  // Update pool availability whenever Microsoft 365 data changes
+  useEffect(() => {
+    updatePoolAvailability();
+  }, [state.microsoft365Pools, state.microsoft365Users, updatePoolAvailability]);
+
   const handleAddLicense = () => {
     setEditingLicense(null);
     setIsModalOpen(true);

@@ -32,7 +32,7 @@ export function Microsoft365Dashboard() {
   };
 
   const handleDeletePool = (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este pool de licenças?')) {
+    if (window.confirm('Tem certeza que deseja excluir este contrato de licenças?')) {
       // Remove users assigned to this pool
       const usersWithThisLicense = state.microsoft365Users.filter(user => 
         user.assignedLicenses.includes(id)
@@ -47,20 +47,28 @@ export function Microsoft365Dashboard() {
       });
 
       dispatch({ type: 'DELETE_M365_POOL', payload: id });
-      toast.success('Pool de licenças excluído com sucesso!');
-      updatePoolAvailability();
+      toast.success('Contrato de licenças excluído com sucesso!');
+      
+      // Force update pool availability after deletion
+      setTimeout(() => {
+        updatePoolAvailability();
+      }, 100);
     }
   };
 
   const handleSavePool = (poolData: Partial<Microsoft365LicensePool>) => {
     if (editingPool) {
       dispatch({ type: 'UPDATE_M365_POOL', payload: poolData as Microsoft365LicensePool });
-      toast.success('Pool de licenças atualizado com sucesso!');
+      toast.success('Contrato de licenças atualizado com sucesso!');
     } else {
       dispatch({ type: 'ADD_M365_POOL', payload: poolData as Microsoft365LicensePool });
-      toast.success('Pool de licenças criado com sucesso!');
+      toast.success('Contrato de licenças criado com sucesso!');
     }
-    updatePoolAvailability();
+    
+    // Force update pool availability after save
+    setTimeout(() => {
+      updatePoolAvailability();
+    }, 100);
   };
 
   const handleAddUser = () => {
@@ -77,7 +85,11 @@ export function Microsoft365Dashboard() {
     if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
       dispatch({ type: 'DELETE_M365_USER', payload: id });
       toast.success('Usuário excluído com sucesso!');
-      updatePoolAvailability();
+      
+      // Force update pool availability after deletion
+      setTimeout(() => {
+        updatePoolAvailability();
+      }, 100);
     }
   };
 
@@ -89,7 +101,11 @@ export function Microsoft365Dashboard() {
       dispatch({ type: 'ADD_M365_USER', payload: userData as Microsoft365User });
       toast.success('Usuário criado com sucesso!');
     }
-    updatePoolAvailability();
+    
+    // Force update pool availability after save
+    setTimeout(() => {
+      updatePoolAvailability();
+    }, 100);
   };
 
   const getLicenseTypeName = (poolId: string) => {
@@ -115,19 +131,44 @@ export function Microsoft365Dashboard() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  // Calcular totais por tipo de licença baseado nos usuários ativos
+  // Calcular totais por tipo de licença baseado nos contratos e usuários
   const getLicenseTotals = () => {
-    const totals: Record<string, { total: number; assigned: number; available: number }> = {};
+    const totals: Record<string, { total: number; assigned: number; available: number; active: number; inactive: number }> = {};
     
+    // Agrupar pools por tipo de licença e somar totais
+    const poolsByType: Record<string, Microsoft365LicensePool[]> = {};
     state.microsoft365Pools.forEach(pool => {
-      const assignedCount = state.microsoft365Users.filter(user => 
-        user.assignedLicenses.includes(pool.id) && user.isActive
+      if (!poolsByType[pool.licenseType]) {
+        poolsByType[pool.licenseType] = [];
+      }
+      poolsByType[pool.licenseType].push(pool);
+    });
+
+    // Calcular totais para cada tipo
+    Object.entries(poolsByType).forEach(([licenseType, pools]) => {
+      const totalLicenses = pools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
+      
+      // Contar usuários ativos e inativos com este tipo de licença
+      const activeUsersWithLicense = state.microsoft365Users.filter(user => 
+        user.isActive && user.assignedLicenses.some(licenseId => 
+          pools.some(pool => pool.id === licenseId)
+        )
       ).length;
       
-      totals[pool.licenseType] = {
-        total: pool.totalLicenses,
-        assigned: assignedCount,
-        available: pool.totalLicenses - assignedCount
+      const inactiveUsersWithLicense = state.microsoft365Users.filter(user => 
+        !user.isActive && user.assignedLicenses.some(licenseId => 
+          pools.some(pool => pool.id === licenseId)
+        )
+      ).length;
+      
+      const totalAssigned = activeUsersWithLicense + inactiveUsersWithLicense;
+      
+      totals[licenseType] = {
+        total: totalLicenses,
+        assigned: totalAssigned,
+        available: totalLicenses - totalAssigned,
+        active: activeUsersWithLicense,
+        inactive: inactiveUsersWithLicense
       };
     });
     
@@ -192,7 +233,9 @@ export function Microsoft365Dashboard() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo de Licenças</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {Object.entries(licenseTotals).map(([licenseType, stats]) => {
-            const pool = state.microsoft365Pools.find(p => p.licenseType === licenseType);
+            const pools = state.microsoft365Pools.filter(p => p.licenseType === licenseType);
+            const mainPool = pools[0]; // Para edição, usar o primeiro pool do tipo
+            
             return (
               <Card key={licenseType} className="hover:shadow-md transition-shadow group">
                 <CardHeader className="pb-2">
@@ -202,25 +245,15 @@ export function Microsoft365Dashboard() {
                       <span className="truncate">{licenseType}</span>
                     </CardTitle>
                     <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {pool && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPool(pool)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletePool(pool.id)}
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </>
+                      {mainPool && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditPool(mainPool)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -229,9 +262,10 @@ export function Microsoft365Dashboard() {
                   <div className="text-lg font-bold text-gray-900">{stats.total}</div>
                   <div className="text-xs text-gray-600">Total</div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-green-600">Atrib: {stats.assigned}</span>
-                    <span className="text-blue-600">Disp: {stats.available}</span>
+                    <span className="text-green-600">Ativas: {stats.active}</span>
+                    <span className="text-red-600">Inativas: {stats.inactive}</span>
                   </div>
+                  <div className="text-xs text-blue-600">Disponíveis: {stats.available}</div>
                 </CardContent>
               </Card>
             );
@@ -342,7 +376,7 @@ export function Microsoft365Dashboard() {
                           <td className="p-4">
                             <Badge 
                               variant={user.isActive ? 'default' : 'secondary'}
-                              className={user.isActive ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-red-100 text-red-800 border-red-200'}
+                              className={user.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}
                             >
                               {user.isActive ? 'Ativo' : 'Inativo'}
                             </Badge>
@@ -376,14 +410,14 @@ export function Microsoft365Dashboard() {
           </Card>
         </div>
 
-        {/* Lista de Licenças - Direita */}
+        {/* Contratos de Licenças - Direita */}
         <div className="w-80 flex-shrink-0">
           <Card className="h-fit">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold flex items-center">
                   <List className="h-5 w-5 mr-2" />
-                  Lista de Licenças
+                  Contratos de Licenças
                 </CardTitle>
                 <Button onClick={handleAddPool} size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4" />
@@ -393,10 +427,10 @@ export function Microsoft365Dashboard() {
             <CardContent className="p-0">
               {state.microsoft365Pools.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
-                  <p className="mb-2">Nenhuma licença cadastrada</p>
+                  <p className="mb-2">Nenhum contrato cadastrado</p>
                   <Button onClick={handleAddPool} size="sm" className="bg-blue-600 hover:bg-blue-700">
                     <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Licença
+                    Adicionar Contrato
                   </Button>
                 </div>
               ) : (
@@ -405,7 +439,7 @@ export function Microsoft365Dashboard() {
                     const expired = isExpired(pool.expirationDate);
                     const expiringSoon = isExpiringSoon(pool.expirationDate);
                     const assignedCount = state.microsoft365Users.filter(user => 
-                      user.assignedLicenses.includes(pool.id) && user.isActive
+                      user.assignedLicenses.includes(pool.id)
                     ).length;
                     
                     return (
@@ -417,7 +451,10 @@ export function Microsoft365Dashboard() {
                             </h4>
                             <div className="flex items-center space-x-2 mt-1">
                               <span className="text-sm text-gray-600">
-                                Qtd: <span className="font-semibold">{pool.totalLicenses}</span>
+                                Total: <span className="font-semibold">{pool.totalLicenses}</span>
+                              </span>
+                              <span className="text-sm text-gray-600">
+                                Usadas: <span className="font-semibold">{assignedCount}</span>
                               </span>
                               {(expired || expiringSoon) && (
                                 <Badge 

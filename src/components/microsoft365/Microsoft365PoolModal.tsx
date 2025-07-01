@@ -29,6 +29,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
     totalLicenses: 0,
     assignedLicenses: 0,
     availableLicenses: 0,
+    cost: 0,
     expirationDate: '',
     notes: '',
   });
@@ -42,6 +43,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
         totalLicenses: 0,
         assignedLicenses: 0,
         availableLicenses: 0,
+        cost: 0,
         expirationDate: '',
         notes: '',
       });
@@ -50,6 +52,11 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.licenseType || !formData.totalLicenses) {
+      alert('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
     
     const now = new Date().toISOString();
     const poolData = {
@@ -76,7 +83,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">
-            {pool ? 'Editar Pool de Licenças' : 'Novo Pool de Licenças'}
+            {pool ? 'Editar Contrato de Licenças' : 'Novo Contrato de Licenças'}
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -85,7 +92,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <Label htmlFor="licenseType">Tipo de Licença</Label>
+            <Label htmlFor="licenseType">Tipo de Licença *</Label>
             <Select
               value={formData.licenseType || ''}
               onValueChange={(value) => handleInputChange('licenseType', value)}
@@ -104,14 +111,28 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
           </div>
 
           <div>
-            <Label htmlFor="totalLicenses">Quantidade Total de Licenças</Label>
+            <Label htmlFor="totalLicenses">Quantidade Total de Licenças *</Label>
             <Input
               id="totalLicenses"
               type="number"
+              min="0"
               value={formData.totalLicenses || ''}
               onChange={(e) => handleInputChange('totalLicenses', parseInt(e.target.value) || 0)}
               placeholder="0"
               required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="cost">Custo por Licença (R$)</Label>
+            <Input
+              id="cost"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.cost || ''}
+              onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
             />
           </div>
 
@@ -131,7 +152,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
               id="notes"
               value={formData.notes || ''}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              placeholder="Observações sobre este pool de licenças"
+              placeholder="Observações sobre este contrato de licenças"
               rows={3}
             />
           </div>
@@ -141,7 +162,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
               Cancelar
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              {pool ? 'Atualizar' : 'Criar'} Pool
+              {pool ? 'Atualizar' : 'Criar'} Contrato
             </Button>
           </div>
         </form>

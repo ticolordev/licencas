@@ -123,7 +123,7 @@ function licenseReducer(state: LicenseState, action: LicenseAction): LicenseStat
     case 'UPDATE_POOL_AVAILABILITY':
       const updatedPools = state.microsoft365Pools.map(pool => {
         const assignedCount = state.microsoft365Users.filter(user => 
-          user.assignedLicenses.includes(pool.id) && user.isActive
+          user.assignedLicenses.includes(pool.id)
         ).length;
         
         return {
@@ -155,13 +155,25 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
 
     types.forEach((type) => {
       if (type === 'microsoft365') {
-        // Calcular baseado nos pools e usuários ativos
+        // Agrupar pools por tipo de licença e somar totais
+        const poolsByType: Record<string, Microsoft365LicensePool[]> = {};
+        state.microsoft365Pools.forEach(pool => {
+          if (!poolsByType[pool.licenseType]) {
+            poolsByType[pool.licenseType] = [];
+          }
+          poolsByType[pool.licenseType].push(pool);
+        });
+
+        // Calcular totais consolidados
         const totalLicenses = state.microsoft365Pools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
-        const assignedLicenses = state.microsoft365Users.reduce((sum, user) => {
-          if (!user.isActive) return sum;
-          return sum + user.assignedLicenses.length;
-        }, 0);
-        const inactiveUsers = state.microsoft365Users.filter(user => !user.isActive).length;
+        
+        // Contar usuários ativos e inativos
+        const activeUsers = state.microsoft365Users.filter(user => user.isActive && user.assignedLicenses.length > 0);
+        const inactiveUsers = state.microsoft365Users.filter(user => !user.isActive && user.assignedLicenses.length > 0);
+        
+        // Contar licenças atribuídas (considerando que um usuário pode ter múltiplas licenças)
+        const activeLicensesCount = activeUsers.reduce((sum, user) => sum + user.assignedLicenses.length, 0);
+        const inactiveLicensesCount = inactiveUsers.reduce((sum, user) => sum + user.assignedLicenses.length, 0);
         
         // Check for pools expiring in the next 30 days
         const thirtyDaysFromNow = new Date();
@@ -174,8 +186,8 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
 
         stats[type] = {
           total: totalLicenses,
-          active: assignedLicenses,
-          inactive: totalLicenses - assignedLicenses,
+          active: activeLicensesCount,
+          inactive: inactiveLicensesCount,
           expiringSoon: expiringSoon,
         };
       } else {

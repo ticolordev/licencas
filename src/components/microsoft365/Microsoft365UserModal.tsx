@@ -39,6 +39,11 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name || !formData.email) {
+      alert('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+    
     const now = new Date().toISOString();
     const userData = {
       ...formData,
@@ -85,7 +90,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <Label htmlFor="name">Nome do Usuário</Label>
+            <Label htmlFor="name">Nome do Usuário *</Label>
             <Input
               id="name"
               value={formData.name || ''}
@@ -96,7 +101,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
           </div>
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
@@ -120,7 +125,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
             <Label className="text-base font-medium">Licenças Atribuídas</Label>
             <div className="mt-2 space-y-3 max-h-48 overflow-y-auto">
               {availablePools.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhum pool de licenças disponível</p>
+                <p className="text-sm text-gray-500">Nenhum contrato de licenças disponível</p>
               ) : (
                 availablePools.map((pool) => {
                   const isAssigned = (formData.assignedLicenses || []).includes(pool.id);
