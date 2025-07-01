@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useCallback } from 'react';
 import { License, LicenseStats, Microsoft365LicensePool, Microsoft365User } from '@/types/license';
 
 interface LicenseState {
@@ -23,8 +23,7 @@ type LicenseAction =
   | { type: 'ADD_M365_USER'; payload: Microsoft365User }
   | { type: 'UPDATE_M365_USER'; payload: Microsoft365User }
   | { type: 'DELETE_M365_USER'; payload: string }
-  | { type: 'LOAD_M365_USERS'; payload: Microsoft365User[] }
-  | { type: 'UPDATE_POOL_AVAILABILITY' };
+  | { type: 'LOAD_M365_USERS'; payload: Microsoft365User[] };
 
 const initialState: LicenseState = {
   licenses: [],
@@ -43,113 +42,157 @@ const LicenseContext = createContext<{
 } | null>(null);
 
 function licenseReducer(state: LicenseState, action: LicenseAction): LicenseState {
+  let newState: LicenseState;
+  
   switch (action.type) {
     case 'ADD_LICENSE':
-      return {
+      newState = {
         ...state,
         licenses: [...state.licenses, action.payload],
       };
+      break;
     case 'UPDATE_LICENSE':
-      return {
+      newState = {
         ...state,
         licenses: state.licenses.map((license) =>
           license.id === action.payload.id ? action.payload : license
         ),
       };
+      break;
     case 'DELETE_LICENSE':
-      return {
+      newState = {
         ...state,
         licenses: state.licenses.filter((license) => license.id !== action.payload),
       };
+      break;
     case 'SET_CATEGORY':
-      return {
+      newState = {
         ...state,
         selectedCategory: action.payload,
       };
+      break;
     case 'SET_SEARCH':
-      return {
+      newState = {
         ...state,
         searchTerm: action.payload,
       };
+      break;
     case 'LOAD_LICENSES':
-      return {
+      newState = {
         ...state,
         licenses: action.payload,
       };
+      break;
     case 'ADD_M365_POOL':
-      return {
+      newState = {
         ...state,
         microsoft365Pools: [...state.microsoft365Pools, action.payload],
       };
+      break;
     case 'UPDATE_M365_POOL':
-      return {
+      newState = {
         ...state,
         microsoft365Pools: state.microsoft365Pools.map((pool) =>
           pool.id === action.payload.id ? action.payload : pool
         ),
       };
+      break;
     case 'DELETE_M365_POOL':
-      return {
+      newState = {
         ...state,
         microsoft365Pools: state.microsoft365Pools.filter((pool) => pool.id !== action.payload),
       };
+      break;
     case 'LOAD_M365_POOLS':
-      return {
+      newState = {
         ...state,
         microsoft365Pools: action.payload,
       };
+      break;
     case 'ADD_M365_USER':
-      return {
+      newState = {
         ...state,
         microsoft365Users: [...state.microsoft365Users, action.payload],
       };
+      break;
     case 'UPDATE_M365_USER':
-      return {
+      newState = {
         ...state,
         microsoft365Users: state.microsoft365Users.map((user) =>
           user.id === action.payload.id ? action.payload : user
         ),
       };
+      break;
     case 'DELETE_M365_USER':
-      return {
+      newState = {
         ...state,
         microsoft365Users: state.microsoft365Users.filter((user) => user.id !== action.payload),
       };
+      break;
     case 'LOAD_M365_USERS':
-      return {
+      newState = {
         ...state,
         microsoft365Users: action.payload,
       };
-    case 'UPDATE_POOL_AVAILABILITY':
-      const updatedPools = state.microsoft365Pools.map(pool => {
-        const assignedCount = state.microsoft365Users.filter(user => 
-          user.assignedLicenses.includes(pool.id)
-        ).length;
-        
-        return {
-          ...pool,
-          assignedLicenses: assignedCount,
-          availableLicenses: pool.totalLicenses - assignedCount
-        };
-      });
-      
-      return {
-        ...state,
-        microsoft365Pools: updatedPools,
-      };
+      break;
     default:
       return state;
   }
+
+  // Automatically update pool availability after any Microsoft 365 change
+  if (action.type.includes('M365')) {
+    const updatedPools = newState.microsoft365Pools.map(pool => {
+      const assignedCount = newState.microsoft365Users.filter(user => 
+        user.assignedLicenses.includes(pool.id)
+      ).length;
+      
+      return {
+        ...pool,
+        assignedLicenses: assignedCount,
+        availableLicenses: pool.totalLicenses - assignedCount
+      };
+    });
+    
+    newState = {
+      ...newState,
+      microsoft365Pools: updatedPools,
+    };
+  }
+
+  return newState;
 }
 
 export function LicenseProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(licenseReducer, initialState);
 
-  const updatePoolAvailability = () => {
-    dispatch({ type: 'UPDATE_POOL_AVAILABILITY' });
-  };
+  const updatePoolAvailability = useCallback(() => {
+    const updatedPools = state.microsoft365Pools.map(pool => {
+      const assignedCount = state.microsoft365Users.filter(user => 
+        user.assignedLicenses.includes(pool.id)
+      ).length;
+      
+      return {
+        ...pool,
+        assignedLicenses: assignedCount,
+        availableLicenses: pool.totalLicenses - assignedCount
+      };
+    });
+    
+    // Only update if there are actual changes
+    const hasChanges = updatedPools.some((pool, index) => {
+      const currentPool = state.microsoft365Pools[index];
+      return currentPool && (
+        currentPool.assignedLicenses !== pool.assignedLicenses ||
+        currentPool.availableLicenses !== pool.availableLicenses
+      );
+    });
 
-  const getStats = (): Record<string, LicenseStats> => {
+    if (hasChanges) {
+      dispatch({ type: 'LOAD_M365_POOLS', payload: updatedPools });
+    }
+  }, [state.microsoft365Pools, state.microsoft365Users]);
+
+  const getStats = useCallback((): Record<string, LicenseStats> => {
     const stats: Record<string, LicenseStats> = {};
     const types = ['microsoft365', 'sophos', 'server', 'windows'];
 
@@ -214,9 +257,9 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     });
 
     return stats;
-  };
+  }, [state.licenses, state.microsoft365Pools, state.microsoft365Users]);
 
-  const getFilteredLicenses = (): License[] => {
+  const getFilteredLicenses = useCallback((): License[] => {
     let filtered = state.licenses;
 
     if (state.selectedCategory !== 'dashboard' && state.selectedCategory !== 'microsoft365') {
@@ -233,7 +276,7 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     }
 
     return filtered;
-  };
+  }, [state.licenses, state.selectedCategory, state.searchTerm]);
 
   return (
     <LicenseContext.Provider value={{ state, dispatch, getStats, getFilteredLicenses, updatePoolAvailability }}>

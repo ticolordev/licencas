@@ -20,7 +20,7 @@ const categoryTitles = {
 };
 
 function AppContent() {
-  const { state, dispatch, getFilteredLicenses, updatePoolAvailability } = useLicense();
+  const { state, dispatch, getFilteredLicenses } = useLicense();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -31,16 +31,7 @@ function AppContent() {
     dispatch({ type: 'LOAD_LICENSES', payload: mockLicenses });
     dispatch({ type: 'LOAD_M365_POOLS', payload: mockMicrosoft365Pools });
     dispatch({ type: 'LOAD_M365_USERS', payload: mockMicrosoft365Users });
-    // Update pool availability after loading data
-    setTimeout(() => {
-      updatePoolAvailability();
-    }, 100);
-  }, [dispatch, updatePoolAvailability]);
-
-  // Update pool availability whenever Microsoft 365 data changes
-  useEffect(() => {
-    updatePoolAvailability();
-  }, [state.microsoft365Pools, state.microsoft365Users, updatePoolAvailability]);
+  }, [dispatch]);
 
   const handleAddLicense = () => {
     setEditingLicense(null);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Users, Package, Edit, Trash2, List, Calendar, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,13 +13,19 @@ type SortField = 'name' | 'email' | 'assignedLicenses' | 'isActive';
 type SortDirection = 'asc' | 'desc';
 
 export function Microsoft365Dashboard() {
-  const { state, dispatch, updatePoolAvailability } = useLicense();
+  const { state, dispatch } = useLicense();
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [editingPool, setEditingPool] = useState<Microsoft365LicensePool | null>(null);
   const [editingUser, setEditingUser] = useState<Microsoft365User | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Force re-render when state changes
+  const [, forceUpdate] = useState({});
+  useEffect(() => {
+    forceUpdate({});
+  }, [state.microsoft365Pools, state.microsoft365Users]);
 
   const handleAddPool = () => {
     setEditingPool(null);
@@ -48,27 +54,31 @@ export function Microsoft365Dashboard() {
 
       dispatch({ type: 'DELETE_M365_POOL', payload: id });
       toast.success('Contrato de licenças excluído com sucesso!');
-      
-      // Force update pool availability after deletion
-      setTimeout(() => {
-        updatePoolAvailability();
-      }, 100);
     }
   };
 
   const handleSavePool = (poolData: Partial<Microsoft365LicensePool>) => {
-    if (editingPool) {
-      dispatch({ type: 'UPDATE_M365_POOL', payload: poolData as Microsoft365LicensePool });
-      toast.success('Contrato de licenças atualizado com sucesso!');
-    } else {
-      dispatch({ type: 'ADD_M365_POOL', payload: poolData as Microsoft365LicensePool });
-      toast.success('Contrato de licenças criado com sucesso!');
+    try {
+      if (editingPool) {
+        dispatch({ type: 'UPDATE_M365_POOL', payload: poolData as Microsoft365LicensePool });
+        toast.success('Contrato de licenças atualizado com sucesso!');
+      } else {
+        const newPool = {
+          ...poolData,
+          id: crypto.randomUUID(),
+          assignedLicenses: 0,
+          availableLicenses: poolData.totalLicenses || 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Microsoft365LicensePool;
+        
+        dispatch({ type: 'ADD_M365_POOL', payload: newPool });
+        toast.success('Contrato de licenças criado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar pool:', error);
+      toast.error('Erro ao salvar contrato de licenças');
     }
-    
-    // Force update pool availability after save
-    setTimeout(() => {
-      updatePoolAvailability();
-    }, 100);
   };
 
   const handleAddUser = () => {
@@ -85,27 +95,29 @@ export function Microsoft365Dashboard() {
     if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
       dispatch({ type: 'DELETE_M365_USER', payload: id });
       toast.success('Usuário excluído com sucesso!');
-      
-      // Force update pool availability after deletion
-      setTimeout(() => {
-        updatePoolAvailability();
-      }, 100);
     }
   };
 
   const handleSaveUser = (userData: Partial<Microsoft365User>) => {
-    if (editingUser) {
-      dispatch({ type: 'UPDATE_M365_USER', payload: userData as Microsoft365User });
-      toast.success('Usuário atualizado com sucesso!');
-    } else {
-      dispatch({ type: 'ADD_M365_USER', payload: userData as Microsoft365User });
-      toast.success('Usuário criado com sucesso!');
+    try {
+      if (editingUser) {
+        dispatch({ type: 'UPDATE_M365_USER', payload: userData as Microsoft365User });
+        toast.success('Usuário atualizado com sucesso!');
+      } else {
+        const newUser = {
+          ...userData,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Microsoft365User;
+        
+        dispatch({ type: 'ADD_M365_USER', payload: newUser });
+        toast.success('Usuário criado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar usuário:', error);
+      toast.error('Erro ao salvar usuário');
     }
-    
-    // Force update pool availability after save
-    setTimeout(() => {
-      updatePoolAvailability();
-    }, 100);
   };
 
   const getLicenseTypeName = (poolId: string) => {
