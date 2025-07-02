@@ -5,9 +5,10 @@ import { Dashboard } from '@/components/dashboard/Dashboard';
 import { LicenseTable } from '@/components/licenses/LicenseTable';
 import { LicenseModal } from '@/components/licenses/LicenseModal';
 import { Microsoft365Dashboard } from '@/components/microsoft365/Microsoft365Dashboard';
+import { GenericLicenseDashboard } from '@/components/licenses/GenericLicenseDashboard';
 import { LicenseProvider, useLicense } from '@/contexts/LicenseContext';
 import { License } from '@/types/license';
-import { mockLicenses, mockMicrosoft365Pools, mockMicrosoft365Users } from '@/data/mockData';
+import { mockLicenses, mockMicrosoft365Pools, mockMicrosoft365Users, mockLicensePools, mockLicenseAssignments } from '@/data/mockData';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -31,6 +32,8 @@ function AppContent() {
     dispatch({ type: 'LOAD_LICENSES', payload: mockLicenses });
     dispatch({ type: 'LOAD_M365_POOLS', payload: mockMicrosoft365Pools });
     dispatch({ type: 'LOAD_M365_USERS', payload: mockMicrosoft365Users });
+    dispatch({ type: 'LOAD_LICENSE_POOLS', payload: mockLicensePools });
+    dispatch({ type: 'LOAD_LICENSE_ASSIGNMENTS', payload: mockLicenseAssignments });
   }, [dispatch]);
 
   const handleAddLicense = () => {
@@ -85,6 +88,12 @@ function AppContent() {
         return <Dashboard />;
       case 'microsoft365':
         return <Microsoft365Dashboard />;
+      case 'sophos':
+        return <GenericLicenseDashboard licenseType="sophos" title="Licenças Sophos" />;
+      case 'server':
+        return <GenericLicenseDashboard licenseType="server" title="Licenças de Servidores" />;
+      case 'windows':
+        return <GenericLicenseDashboard licenseType="windows" title="Licenças Windows" />;
       default:
         return (
           <LicenseTable
@@ -130,7 +139,7 @@ function AppContent() {
       </div>
 
       {/* License Modal */}
-      {!['microsoft365'].includes(state.selectedCategory) && (
+      {!['microsoft365', 'sophos', 'server', 'windows'].includes(state.selectedCategory) && (
         <LicenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

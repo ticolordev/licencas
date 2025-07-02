@@ -39,6 +39,37 @@ export interface Microsoft365User {
   updatedAt: string;
 }
 
+// Generic License Pool for other types
+export interface LicensePool {
+  id: string;
+  type: 'sophos' | 'server' | 'windows';
+  name: string;
+  totalLicenses: number;
+  assignedLicenses: number;
+  availableLicenses: number;
+  cost?: number;
+  expirationDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Generic License Assignment
+export interface LicenseAssignment {
+  id: string;
+  type: 'sophos' | 'server' | 'windows';
+  poolId: string;
+  deviceName?: string;
+  serverName?: string;
+  userEmail?: string;
+  serialNumber?: string;
+  licenseKey?: string;
+  isActive: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SophosLicense extends BaseLicense {
   type: 'sophos';
   productType: 'Central' | 'Firewall';

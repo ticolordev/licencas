@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useReducer, ReactNode, useCallback } from 'react';
-import { License, LicenseStats, Microsoft365LicensePool, Microsoft365User } from '@/types/license';
+import { License, LicenseStats, Microsoft365LicensePool, Microsoft365User, LicensePool, LicenseAssignment } from '@/types/license';
 
 interface LicenseState {
   licenses: License[];
   microsoft365Pools: Microsoft365LicensePool[];
   microsoft365Users: Microsoft365User[];
+  licensePools: LicensePool[];
+  licenseAssignments: LicenseAssignment[];
   selectedCategory: string;
   searchTerm: string;
 }
@@ -23,12 +25,22 @@ type LicenseAction =
   | { type: 'ADD_M365_USER'; payload: Microsoft365User }
   | { type: 'UPDATE_M365_USER'; payload: Microsoft365User }
   | { type: 'DELETE_M365_USER'; payload: string }
-  | { type: 'LOAD_M365_USERS'; payload: Microsoft365User[] };
+  | { type: 'LOAD_M365_USERS'; payload: Microsoft365User[] }
+  | { type: 'ADD_LICENSE_POOL'; payload: LicensePool }
+  | { type: 'UPDATE_LICENSE_POOL'; payload: LicensePool }
+  | { type: 'DELETE_LICENSE_POOL'; payload: string }
+  | { type: 'LOAD_LICENSE_POOLS'; payload: LicensePool[] }
+  | { type: 'ADD_LICENSE_ASSIGNMENT'; payload: LicenseAssignment }
+  | { type: 'UPDATE_LICENSE_ASSIGNMENT'; payload: LicenseAssignment }
+  | { type: 'DELETE_LICENSE_ASSIGNMENT'; payload: string }
+  | { type: 'LOAD_LICENSE_ASSIGNMENTS'; payload: LicenseAssignment[] };
 
 const initialState: LicenseState = {
   licenses: [],
   microsoft365Pools: [],
   microsoft365Users: [],
+  licensePools: [],
+  licenseAssignments: [],
   selectedCategory: 'dashboard',
   searchTerm: '',
 };
@@ -135,6 +147,58 @@ function licenseReducer(state: LicenseState, action: LicenseAction): LicenseStat
         microsoft365Users: action.payload,
       };
       break;
+    case 'ADD_LICENSE_POOL':
+      newState = {
+        ...state,
+        licensePools: [...state.licensePools, action.payload],
+      };
+      break;
+    case 'UPDATE_LICENSE_POOL':
+      newState = {
+        ...state,
+        licensePools: state.licensePools.map((pool) =>
+          pool.id === action.payload.id ? action.payload : pool
+        ),
+      };
+      break;
+    case 'DELETE_LICENSE_POOL':
+      newState = {
+        ...state,
+        licensePools: state.licensePools.filter((pool) => pool.id !== action.payload),
+      };
+      break;
+    case 'LOAD_LICENSE_POOLS':
+      newState = {
+        ...state,
+        licensePools: action.payload,
+      };
+      break;
+    case 'ADD_LICENSE_ASSIGNMENT':
+      newState = {
+        ...state,
+        licenseAssignments: [...state.licenseAssignments, action.payload],
+      };
+      break;
+    case 'UPDATE_LICENSE_ASSIGNMENT':
+      newState = {
+        ...state,
+        licenseAssignments: state.licenseAssignments.map((assignment) =>
+          assignment.id === action.payload.id ? action.payload : assignment
+        ),
+      };
+      break;
+    case 'DELETE_LICENSE_ASSIGNMENT':
+      newState = {
+        ...state,
+        licenseAssignments: state.licenseAssignments.filter((assignment) => assignment.id !== action.payload),
+      };
+      break;
+    case 'LOAD_LICENSE_ASSIGNMENTS':
+      newState = {
+        ...state,
+        licenseAssignments: action.payload,
+      };
+      break;
     default:
       return state;
   }
@@ -156,6 +220,26 @@ function licenseReducer(state: LicenseState, action: LicenseAction): LicenseStat
     newState = {
       ...newState,
       microsoft365Pools: updatedPools,
+    };
+  }
+
+  // Automatically update license pool availability
+  if (action.type.includes('LICENSE_POOL') || action.type.includes('LICENSE_ASSIGNMENT')) {
+    const updatedLicensePools = newState.licensePools.map(pool => {
+      const assignedCount = newState.licenseAssignments.filter(assignment => 
+        assignment.poolId === pool.id && assignment.isActive
+      ).length;
+      
+      return {
+        ...pool,
+        assignedLicenses: assignedCount,
+        availableLicenses: pool.totalLicenses - assignedCount
+      };
+    });
+    
+    newState = {
+      ...newState,
+      licensePools: updatedLicensePools,
     };
   }
 
@@ -225,30 +309,53 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
           expiringSoon: expiringSoon,
         };
       } else {
+        // Para outros tipos, usar pools + licenças antigas
+        const poolsOfType = state.licensePools.filter(pool => pool.type === type);
         const licensesOfType = state.licenses.filter((license) => license.type === type);
-        const active = licensesOfType.filter((license) => license.isActive);
-        const inactive = licensesOfType.filter((license) => !license.isActive);
+        const assignmentsOfType = state.licenseAssignments.filter(assignment => assignment.type === type);
         
-        // Check for licenses expiring in the next 30 days
+        // Total de licenças (pools + licenças antigas)
+        const totalFromPools = poolsOfType.reduce((sum, pool) => sum + pool.totalLicenses, 0);
+        const totalFromLicenses = licensesOfType.length;
+        const total = totalFromPools + totalFromLicenses;
+        
+        // Ativas (assignments ativos + licenças antigas ativas)
+        const activeFromAssignments = assignmentsOfType.filter(assignment => assignment.isActive).length;
+        const activeFromLicenses = licensesOfType.filter(license => license.isActive).length;
+        const active = activeFromAssignments + activeFromLicenses;
+        
+        // Inativas
+        const inactiveFromAssignments = assignmentsOfType.filter(assignment => !assignment.isActive).length;
+        const inactiveFromLicenses = licensesOfType.filter(license => !license.isActive).length;
+        const inactive = inactiveFromAssignments + inactiveFromLicenses;
+        
+        // Expirando em breve
         const thirtyDaysFromNow = new Date();
         thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-        const expiringSoon = licensesOfType.filter((license) => {
+        
+        const expiringPools = poolsOfType.filter((pool) => {
+          if (!pool.expirationDate) return false;
+          const expirationDate = new Date(pool.expirationDate);
+          return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
+        });
+        
+        const expiringLicenses = licensesOfType.filter((license) => {
           if (!license.expirationDate) return false;
           const expirationDate = new Date(license.expirationDate);
           return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
         });
 
         stats[type] = {
-          total: licensesOfType.length,
-          active: active.length,
-          inactive: inactive.length,
-          expiringSoon: expiringSoon.length,
+          total,
+          active,
+          inactive,
+          expiringSoon: expiringPools.length + expiringLicenses.length,
         };
       }
     });
 
     return stats;
-  }, [state.licenses, state.microsoft365Pools, state.microsoft365Users]);
+  }, [state.licenses, state.microsoft365Pools, state.microsoft365Users, state.licensePools, state.licenseAssignments]);
 
   const getFilteredLicenses = useCallback((): License[] => {
     let filtered = state.licenses;
