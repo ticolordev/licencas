@@ -1,7 +1,7 @@
 import React from 'react';
 import { Users, Shield, Server, Monitor } from 'lucide-react';
 import { StatsCard } from './StatsCard';
-import { RecentLicenses } from './RecentLicenses';
+import { LicenseChart } from './LicenseChart';
 import { ExpiringLicenses } from './ExpiringLicenses';
 import { useLicense } from '@/contexts/LicenseContext';
 
@@ -61,10 +61,10 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Recent and Expiring Licenses */}
+      {/* Chart and Expiring Licenses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentLicenses licenses={state.licenses} />
-        <ExpiringLicenses licenses={state.licenses} />
+        <LicenseChart stats={stats} />
+        <ExpiringLicenses licenses={state.licenses} microsoft365Pools={state.microsoft365Pools} />
       </div>
     </div>
   );

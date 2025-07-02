@@ -198,15 +198,6 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
 
     types.forEach((type) => {
       if (type === 'microsoft365') {
-        // Agrupar pools por tipo de licença e somar totais
-        const poolsByType: Record<string, Microsoft365LicensePool[]> = {};
-        state.microsoft365Pools.forEach(pool => {
-          if (!poolsByType[pool.licenseType]) {
-            poolsByType[pool.licenseType] = [];
-          }
-          poolsByType[pool.licenseType].push(pool);
-        });
-
         // Calcular totais consolidados
         const totalLicenses = state.microsoft365Pools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
         

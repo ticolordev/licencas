@@ -145,7 +145,7 @@ export function Microsoft365Dashboard() {
 
   // Calcular totais por tipo de licença baseado nos contratos e usuários
   const getLicenseTotals = () => {
-    const totals: Record<string, { total: number; assigned: number; available: number; active: number; inactive: number }> = {};
+    const totals: Record<string, { total: number; assigned: number; available: number; active: number; inactive: number; expired: number }> = {};
     
     // Agrupar pools por tipo de licença e somar totais
     const poolsByType: Record<string, Microsoft365LicensePool[]> = {};
@@ -175,12 +175,18 @@ export function Microsoft365Dashboard() {
       
       const totalAssigned = activeUsersWithLicense + inactiveUsersWithLicense;
       
+      // Contar licenças expiradas
+      const expiredLicenses = pools.reduce((sum, pool) => {
+        return sum + (isExpired(pool.expirationDate) ? pool.totalLicenses : 0);
+      }, 0);
+      
       totals[licenseType] = {
         total: totalLicenses,
         assigned: totalAssigned,
         available: totalLicenses - totalAssigned,
         active: activeUsersWithLicense,
-        inactive: inactiveUsersWithLicense
+        inactive: inactiveUsersWithLicense,
+        expired: expiredLicenses
       };
     });
     
@@ -275,9 +281,12 @@ export function Microsoft365Dashboard() {
                   <div className="text-xs text-gray-600">Total</div>
                   <div className="flex justify-between text-xs">
                     <span className="text-green-600">Ativas: {stats.active}</span>
-                    <span className="text-red-600">Inativas: {stats.inactive}</span>
+                    <span className="text-orange-600">Usuários Inativos: {stats.inactive}</span>
                   </div>
-                  <div className="text-xs text-blue-600">Disponíveis: {stats.available}</div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-blue-600">Disponíveis: {stats.available}</span>
+                    <span className="text-red-600">Expiradas: {stats.expired}</span>
+                  </div>
                 </CardContent>
               </Card>
             );
