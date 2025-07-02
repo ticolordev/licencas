@@ -10,32 +10,34 @@ interface ExpiringLicensesProps {
 }
 
 export function ExpiringLicenses({ licenses, microsoft365Pools }: ExpiringLicensesProps) {
+  const now = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-  // Combinar licenças regulares e pools do Microsoft 365
+  // Combinar licenças regulares e pools do Microsoft 365 (incluindo expiradas)
   const allExpiringItems = [
-    // Licenças regulares
+    // Licenças regulares expirando ou expiradas
     ...licenses
       .filter((license) => {
         if (!license.expirationDate || !license.isActive) return false;
         const expirationDate = new Date(license.expirationDate);
-        return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
+        return expirationDate <= thirtyDaysFromNow; // Inclui expiradas e expirando
       })
       .map(license => ({
         id: license.id,
         name: license.name,
         type: license.type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
         expirationDate: license.expirationDate!,
-        isPool: false
+        isPool: false,
+        isExpired: new Date(license.expirationDate!) < now
       })),
     
-    // Pools do Microsoft 365
+    // Pools do Microsoft 365 expirando ou expirados
     ...microsoft365Pools
       .filter((pool) => {
         if (!pool.expirationDate) return false;
         const expirationDate = new Date(pool.expirationDate);
-        return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
+        return expirationDate <= thirtyDaysFromNow; // Inclui expiradas e expirando
       })
       .map(pool => ({
         id: pool.id,
@@ -43,15 +45,15 @@ export function ExpiringLicenses({ licenses, microsoft365Pools }: ExpiringLicens
         type: 'Microsoft 365',
         expirationDate: pool.expirationDate!,
         isPool: true,
-        totalLicenses: pool.totalLicenses
+        totalLicenses: pool.totalLicenses,
+        isExpired: new Date(pool.expirationDate!) < now
       }))
   ]
   .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime())
-  .slice(0, 5);
+  .slice(0, 8); // Aumentei para mostrar mais itens
 
   const getDaysUntilExpiration = (expirationDate: string) => {
     const expiration = new Date(expirationDate);
-    const now = new Date();
     const diffTime = expiration.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -72,11 +74,15 @@ export function ExpiringLicenses({ licenses, microsoft365Pools }: ExpiringLicens
           ) : (
             allExpiringItems.map((item) => {
               const daysUntilExpiration = getDaysUntilExpiration(item.expirationDate);
-              const isUrgent = daysUntilExpiration <= 7;
+              const isUrgent = daysUntilExpiration <= 7 && !item.isExpired;
               
               return (
                 <div key={item.id} className={`p-3 rounded-lg border-l-4 ${
-                  isUrgent ? 'bg-red-50 border-red-400' : 'bg-orange-50 border-orange-400'
+                  item.isExpired 
+                    ? 'bg-red-100 border-red-500' 
+                    : isUrgent 
+                      ? 'bg-red-50 border-red-400' 
+                      : 'bg-orange-50 border-orange-400'
                 }`}>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -91,15 +97,18 @@ export function ExpiringLicenses({ licenses, microsoft365Pools }: ExpiringLicens
                           </Badge>
                         )}
                         <Badge 
-                          variant={isUrgent ? 'destructive' : 'secondary'} 
+                          variant={item.isExpired ? 'destructive' : isUrgent ? 'destructive' : 'secondary'} 
                           className="text-xs"
                         >
-                          {daysUntilExpiration} dia{daysUntilExpiration !== 1 ? 's' : ''}
+                          {item.isExpired 
+                            ? `Expirada há ${Math.abs(daysUntilExpiration)} dia${Math.abs(daysUntilExpiration) !== 1 ? 's' : ''}`
+                            : `${daysUntilExpiration} dia${daysUntilExpiration !== 1 ? 's' : ''}`
+                          }
                         </Badge>
                       </div>
                       <div className="flex items-center mt-2 text-xs text-gray-500">
                         <Calendar className="h-3 w-3 mr-1" />
-                        Expira em {new Date(item.expirationDate).toLocaleDateString('pt-BR')}
+                        {item.isExpired ? 'Expirou em' : 'Expira em'} {new Date(item.expirationDate).toLocaleDateString('pt-BR')}
                       </div>
                     </div>
                   </div>
