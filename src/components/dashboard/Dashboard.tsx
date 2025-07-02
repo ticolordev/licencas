@@ -42,7 +42,11 @@ export function Dashboard() {
       {/* Chart and Expiring Licenses */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LicenseChart stats={stats} />
-        <ExpiringLicenses licenses={state.licenses} microsoft365Pools={state.microsoft365Pools} />
+        <ExpiringLicenses 
+          licenses={state.licenses} 
+          microsoft365Pools={state.microsoft365Pools}
+          licensePools={state.licensePools}
+        />
       </div>
     </div>
   );

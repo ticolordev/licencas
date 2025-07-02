@@ -2,33 +2,6 @@ import { License, Microsoft365LicensePool, Microsoft365User, LicensePool, Licens
 
 export const mockLicenses: License[] = [
   {
-    id: '3',
-    type: 'sophos',
-    name: 'Sophos Central Intercept X',
-    productType: 'Central',
-    deviceCount: 50,
-    isActive: true,
-    expirationDate: '2024-06-30',
-    cost: 45.00,
-    notes: 'Antivírus para estações de trabalho',
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-10',
-  },
-  {
-    id: '4',
-    type: 'sophos',
-    name: 'Sophos XGS 4100 Firewall',
-    productType: 'Firewall',
-    deviceCount: 1,
-    serialNumber: 'XG4100-ABC123',
-    isActive: true,
-    expirationDate: '2025-03-15',
-    cost: 800.00,
-    notes: 'Firewall principal da empresa',
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-05',
-  },
-  {
     id: '5',
     type: 'server',
     name: 'SQL Server Standard 2022',
@@ -260,7 +233,7 @@ export const mockLicensePools: LicensePool[] = [
     assignedLicenses: 2,
     availableLicenses: 0,
     cost: 6000.00,
-    expirationDate: '2023-12-31', // Expirada
+    expirationDate: '2024-01-15', // Expirada (data no passado)
     notes: 'Licenças para servidores críticos',
     createdAt: '2024-01-01',
     updatedAt: '2024-01-15',
@@ -352,5 +325,29 @@ export const mockLicenseAssignments: LicenseAssignment[] = [
     notes: 'Estação de design (inativa)',
     createdAt: '2024-01-21',
     updatedAt: '2024-01-21',
+  },
+  
+  // Windows Server Datacenter assignments (expiradas)
+  {
+    id: 'assign-8',
+    type: 'windows',
+    poolId: 'windows-pool-2',
+    deviceName: 'SRV-CRITICAL-01',
+    licenseKey: 'WINDC-XXXXX-XXXXX-XXXXX',
+    isActive: true,
+    notes: 'Servidor crítico principal',
+    createdAt: '2024-01-22',
+    updatedAt: '2024-01-22',
+  },
+  {
+    id: 'assign-9',
+    type: 'windows',
+    poolId: 'windows-pool-2',
+    deviceName: 'SRV-CRITICAL-02',
+    licenseKey: 'WINDC-YYYYY-YYYYY-YYYYY',
+    isActive: true,
+    notes: 'Servidor crítico secundário',
+    createdAt: '2024-01-23',
+    updatedAt: '2024-01-23',
   },
 ];

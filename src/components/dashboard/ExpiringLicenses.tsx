@@ -1,20 +1,21 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { License, Microsoft365LicensePool } from '@/types/license';
+import { License, Microsoft365LicensePool, LicensePool } from '@/types/license';
 import { AlertTriangle, Calendar } from 'lucide-react';
 
 interface ExpiringLicensesProps {
   licenses: License[];
   microsoft365Pools: Microsoft365LicensePool[];
+  licensePools: LicensePool[];
 }
 
-export function ExpiringLicenses({ licenses, microsoft365Pools }: ExpiringLicensesProps) {
+export function ExpiringLicenses({ licenses, microsoft365Pools, licensePools }: ExpiringLicensesProps) {
   const now = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-  // Combinar licenças regulares e pools do Microsoft 365 (incluindo expiradas)
+  // Combinar todas as licenças e pools (incluindo expiradas)
   const allExpiringItems = [
     // Licenças regulares expirando ou expiradas
     ...licenses
@@ -47,10 +48,27 @@ export function ExpiringLicenses({ licenses, microsoft365Pools }: ExpiringLicens
         isPool: true,
         totalLicenses: pool.totalLicenses,
         isExpired: new Date(pool.expirationDate!) < now
+      })),
+
+    // Pools de outras licenças (Sophos, Server, Windows) expirando ou expirados
+    ...licensePools
+      .filter((pool) => {
+        if (!pool.expirationDate) return false;
+        const expirationDate = new Date(pool.expirationDate);
+        return expirationDate <= thirtyDaysFromNow; // Inclui expiradas e expirando
+      })
+      .map(pool => ({
+        id: pool.id,
+        name: pool.name,
+        type: pool.type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+        expirationDate: pool.expirationDate!,
+        isPool: true,
+        totalLicenses: pool.totalLicenses,
+        isExpired: new Date(pool.expirationDate!) < now
       }))
   ]
   .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime())
-  .slice(0, 8); // Aumentei para mostrar mais itens
+  .slice(0, 8); // Mostrar até 8 itens
 
   const getDaysUntilExpiration = (expirationDate: string) => {
     const expiration = new Date(expirationDate);
