@@ -2,6 +2,7 @@ import React from 'react';
 import { Users, Shield, Server, Monitor } from 'lucide-react';
 import { StatsCard } from './StatsCard';
 import { LicenseChart } from './LicenseChart';
+import { LicenseCostChart } from './LicenseCostChart';
 import { ExpiringLicenses } from './ExpiringLicenses';
 import { useLicense } from '@/contexts/LicenseContext';
 
@@ -47,6 +48,11 @@ export function Dashboard() {
           microsoft365Pools={state.microsoft365Pools}
           licensePools={state.licensePools}
         />
+      </div>
+
+      {/* Cost Chart */}
+      <div className="grid grid-cols-1 gap-6">
+        <LicenseCostChart />
       </div>
     </div>
   );
