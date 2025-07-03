@@ -12,9 +12,8 @@ export function Dashboard() {
   const stats = getStats();
   
   // Estados para controlar o tamanho das seções
-  const [chartExpanded, setChartExpanded] = useState(false);
-  const [costChartExpanded, setCostChartExpanded] = useState(false);
-  const [expiringExpanded, setExpiringExpanded] = useState(false);
+  const [leftExpanded, setLeftExpanded] = useState(false);
+  const [rightExpanded, setRightExpanded] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -46,62 +45,54 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Layout em 3 seções independentes */}
-      <div className="space-y-6">
-        {/* Seção 1: Distribuição de Licenças */}
-        <div className="relative">
-          <div className="absolute top-4 right-4 z-10">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChartExpanded(!chartExpanded)}
-              className="h-8 w-8 p-0"
-            >
-              {chartExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-          </div>
-          <LicenseChart stats={stats} />
-        </div>
-
-        {/* Seção 2: Custos de Licenças - Sempre abaixo da Distribuição */}
-        <div className={`grid gap-6 ${costChartExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+      {/* Layout Principal: 2 colunas independentes */}
+      <div className={`grid gap-6 ${leftExpanded || rightExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+        
+        {/* Coluna Esquerda: Distribuição + Custos */}
+        <div className={`space-y-6 ${leftExpanded ? 'lg:col-span-2' : ''}`}>
+          {/* Distribuição de Licenças */}
           <div className="relative">
             <div className="absolute top-4 right-4 z-10">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setCostChartExpanded(!costChartExpanded)}
+                onClick={() => setLeftExpanded(!leftExpanded)}
                 className="h-8 w-8 p-0"
               >
-                {costChartExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                {leftExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
             </div>
+            <LicenseChart stats={stats} />
+          </div>
+
+          {/* Custos de Licenças */}
+          <div className="relative">
             <LicenseCostChart />
           </div>
-          {!costChartExpanded && <div></div>} {/* Espaço vazio para manter meia largura */}
         </div>
 
-        {/* Seção 3: Licenças Expirando - Independente das outras */}
-        <div className={`grid gap-6 ${expiringExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-          <div></div> {/* Espaço vazio à esquerda quando não expandido */}
-          <div className={`relative ${expiringExpanded ? 'lg:col-span-1' : ''}`}>
-            <div className="absolute top-4 right-4 z-10">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setExpiringExpanded(!expiringExpanded)}
-                className="h-8 w-8 p-0"
-              >
-                {expiringExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
+        {/* Coluna Direita: Licenças Expirando */}
+        {!leftExpanded && (
+          <div className={`${rightExpanded ? 'lg:col-span-2' : ''}`}>
+            <div className="relative">
+              <div className="absolute top-4 right-4 z-10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRightExpanded(!rightExpanded)}
+                  className="h-8 w-8 p-0"
+                >
+                  {rightExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
+              </div>
+              <ExpiringLicenses 
+                licenses={state.licenses} 
+                microsoft365Pools={state.microsoft365Pools}
+                licensePools={state.licensePools}
+              />
             </div>
-            <ExpiringLicenses 
-              licenses={state.licenses} 
-              microsoft365Pools={state.microsoft365Pools}
-              licensePools={state.licensePools}
-            />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
