@@ -287,26 +287,24 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         
         // Contar usuários ativos e inativos
         const activeUsers = state.microsoft365Users.filter(user => user.isActive && user.assignedLicenses.length > 0);
-        const inactiveUsers = state.microsoft365Users.filter(user => !user.isActive && user.assignedLicenses.length > 0);
         
         // Contar licenças atribuídas (considerando que um usuário pode ter múltiplas licenças)
         const activeLicensesCount = activeUsers.reduce((sum, user) => sum + user.assignedLicenses.length, 0);
-        const inactiveLicensesCount = inactiveUsers.reduce((sum, user) => sum + user.assignedLicenses.length, 0);
         
-        // Check for pools expiring in the next 30 days
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-        const expiringSoon = state.microsoft365Pools.filter((pool) => {
+        // Contar licenças expiradas (pools expirados)
+        const now = new Date();
+        const expiredPools = state.microsoft365Pools.filter((pool) => {
           if (!pool.expirationDate) return false;
-          const expirationDate = new Date(pool.expirationDate);
-          return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
-        }).length;
+          return new Date(pool.expirationDate) < now;
+        });
+        const expiredLicensesCount = expiredPools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
 
         stats[type] = {
           total: totalLicenses,
           active: activeLicensesCount,
-          inactive: inactiveLicensesCount,
-          expiringSoon: expiringSoon,
+          inactive: 0, // Não usado mais
+          expired: expiredLicensesCount,
+          expiringSoon: 0, // Calculado separadamente em ExpiringLicenses
         };
       } else {
         // Para outros tipos, usar pools + licenças antigas
@@ -324,32 +322,27 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         const activeFromLicenses = licensesOfType.filter(license => license.isActive).length;
         const active = activeFromAssignments + activeFromLicenses;
         
-        // Inativas
-        const inactiveFromAssignments = assignmentsOfType.filter(assignment => !assignment.isActive).length;
-        const inactiveFromLicenses = licensesOfType.filter(license => !license.isActive).length;
-        const inactive = inactiveFromAssignments + inactiveFromLicenses;
-        
-        // Expirando em breve
-        const thirtyDaysFromNow = new Date();
-        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-        
-        const expiringPools = poolsOfType.filter((pool) => {
+        // Expiradas (pools expirados + licenças antigas expiradas)
+        const now = new Date();
+        const expiredPools = poolsOfType.filter((pool) => {
           if (!pool.expirationDate) return false;
-          const expirationDate = new Date(pool.expirationDate);
-          return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
+          return new Date(pool.expirationDate) < now;
+        });
+        const expiredLicenses = licensesOfType.filter((license) => {
+          if (!license.expirationDate) return false;
+          return new Date(license.expirationDate) < now;
         });
         
-        const expiringLicenses = licensesOfType.filter((license) => {
-          if (!license.expirationDate) return false;
-          const expirationDate = new Date(license.expirationDate);
-          return expirationDate <= thirtyDaysFromNow && expirationDate >= new Date();
-        });
+        const expiredFromPools = expiredPools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
+        const expiredFromLicenses = expiredLicenses.length;
+        const expired = expiredFromPools + expiredFromLicenses;
 
         stats[type] = {
           total,
           active,
-          inactive,
-          expiringSoon: expiringPools.length + expiringLicenses.length,
+          inactive: 0, // Não usado mais
+          expired,
+          expiringSoon: 0, // Calculado separadamente em ExpiringLicenses
         };
       }
     });

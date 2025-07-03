@@ -50,9 +50,10 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Cost Chart */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* Cost Chart - Half width */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LicenseCostChart />
+        <div></div> {/* Empty space to maintain half-width */}
       </div>
     </div>
   );

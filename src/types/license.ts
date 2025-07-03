@@ -98,6 +98,7 @@ export type License = Microsoft365License | SophosLicense | ServerLicense | Wind
 export interface LicenseStats {
   total: number;
   active: number;
-  inactive: number;
+  inactive: number; // Deprecated - mantido para compatibilidade
+  expired: number;
   expiringSoon: number;
 }

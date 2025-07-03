@@ -51,14 +51,9 @@ export function StatsCard({ title, icon: Icon, stats, color }: StatsCardProps) {
             <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
               {stats.active} Ativas
             </Badge>
-            {stats.inactive > 0 && (
-              <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">
-                {stats.inactive} Inativas
-              </Badge>
-            )}
-            {stats.expiringSoon > 0 && (
+            {stats.expired > 0 && (
               <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
-                {stats.expiringSoon} Expirando
+                {stats.expired} Expiradas
               </Badge>
             )}
           </div>
