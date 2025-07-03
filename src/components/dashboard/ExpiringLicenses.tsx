@@ -17,22 +17,6 @@ export function ExpiringLicenses({ licenses, microsoft365Pools, licensePools }: 
 
   // Combinar todas as licenças e pools (incluindo expiradas)
   const allExpiringItems = [
-    // Licenças regulares expirando ou expiradas
-    ...licenses
-      .filter((license) => {
-        if (!license.expirationDate || !license.isActive) return false;
-        const expirationDate = new Date(license.expirationDate);
-        return expirationDate <= thirtyDaysFromNow; // Inclui expiradas e expirando
-      })
-      .map(license => ({
-        id: license.id,
-        name: license.name,
-        type: license.type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-        expirationDate: license.expirationDate!,
-        isPool: false,
-        isExpired: new Date(license.expirationDate!) < now
-      })),
-    
     // Pools do Microsoft 365 expirando ou expirados
     ...microsoft365Pools
       .filter((pool) => {
