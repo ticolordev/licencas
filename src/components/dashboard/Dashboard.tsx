@@ -46,9 +46,9 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Chart and Expiring Licenses */}
-      <div className={`grid gap-6 ${chartExpanded || expiringExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-        {/* License Distribution Chart */}
+      {/* Layout em 3 seções independentes */}
+      <div className="space-y-6">
+        {/* Seção 1: Distribuição de Licenças */}
         <div className="relative">
           <div className="absolute top-4 right-4 z-10">
             <Button
@@ -63,9 +63,28 @@ export function Dashboard() {
           <LicenseChart stats={stats} />
         </div>
 
-        {/* Expiring Licenses */}
-        {!chartExpanded && (
+        {/* Seção 2: Custos de Licenças - Sempre abaixo da Distribuição */}
+        <div className={`grid gap-6 ${costChartExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
           <div className="relative">
+            <div className="absolute top-4 right-4 z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCostChartExpanded(!costChartExpanded)}
+                className="h-8 w-8 p-0"
+              >
+                {costChartExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+            </div>
+            <LicenseCostChart />
+          </div>
+          {!costChartExpanded && <div></div>} {/* Espaço vazio para manter meia largura */}
+        </div>
+
+        {/* Seção 3: Licenças Expirando - Independente das outras */}
+        <div className={`grid gap-6 ${expiringExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
+          <div></div> {/* Espaço vazio à esquerda quando não expandido */}
+          <div className={`relative ${expiringExpanded ? 'lg:col-span-1' : ''}`}>
             <div className="absolute top-4 right-4 z-10">
               <Button
                 variant="ghost"
@@ -82,25 +101,7 @@ export function Dashboard() {
               licensePools={state.licensePools}
             />
           </div>
-        )}
-      </div>
-
-      {/* Cost Chart - Half width with manual resize */}
-      <div className={`grid gap-6 ${costChartExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
-        <div className="relative">
-          <div className="absolute top-4 right-4 z-10">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCostChartExpanded(!costChartExpanded)}
-              className="h-8 w-8 p-0"
-            >
-              {costChartExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-          </div>
-          <LicenseCostChart />
         </div>
-        {!costChartExpanded && <div></div>} {/* Empty space to maintain half-width when not expanded */}
       </div>
     </div>
   );

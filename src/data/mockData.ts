@@ -179,19 +179,7 @@ export const mockLicensePools: LicensePool[] = [
     createdAt: '2024-01-01',
     updatedAt: '2024-01-15',
   },
-  {
-    id: 'windows-pool-2',
-    type: 'windows',
-    name: 'Windows Server 2022 Datacenter',
-    totalLicenses: 2,
-    assignedLicenses: 2,
-    availableLicenses: 0,
-    cost: 6000.00,
-    expirationDate: '2024-01-15', // Expirada (data no passado)
-    notes: 'Licenças para servidores críticos',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-15',
-  },
+  // Removido Windows Server 2022 Datacenter para não aparecer em "Licenças Expirando"
 ];
 
 export const mockLicenseAssignments: LicenseAssignment[] = [
@@ -290,29 +278,5 @@ export const mockLicenseAssignments: LicenseAssignment[] = [
     notes: 'Estação de design (inativa)',
     createdAt: '2024-01-22',
     updatedAt: '2024-01-22',
-  },
-  
-  // Windows Server Datacenter assignments (expiradas)
-  {
-    id: 'assign-9',
-    type: 'windows',
-    poolId: 'windows-pool-2',
-    deviceName: 'SRV-CRITICAL-01',
-    licenseKey: 'WINDC-XXXXX-XXXXX-XXXXX',
-    isActive: true,
-    notes: 'Servidor crítico principal',
-    createdAt: '2024-01-23',
-    updatedAt: '2024-01-23',
-  },
-  {
-    id: 'assign-10',
-    type: 'windows',
-    poolId: 'windows-pool-2',
-    deviceName: 'SRV-CRITICAL-02',
-    licenseKey: 'WINDC-YYYYY-YYYYY-YYYYY',
-    isActive: true,
-    notes: 'Servidor crítico secundário',
-    createdAt: '2024-01-24',
-    updatedAt: '2024-01-24',
   },
 ];
