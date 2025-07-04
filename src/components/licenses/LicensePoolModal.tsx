@@ -87,7 +87,7 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
             variant="ghost" 
             size="icon" 
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            className="text-gray-800 hover:text-black hover:bg-gray-200 border border-gray-300"
           >
             <X className="h-4 w-4" />
           </Button>
