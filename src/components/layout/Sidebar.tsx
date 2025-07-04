@@ -63,7 +63,7 @@ export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onTog
           variant="ghost"
           size="icon"
           onClick={onToggleCollapse}
-          className="h-8 w-8"
+          className="h-8 w-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
