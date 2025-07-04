@@ -60,14 +60,14 @@ export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onTog
           <h1 className="text-xl font-bold text-gray-800">Licenças</h1>
         )}
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
           onClick={onToggleCollapse}
-          className="h-8 w-8 text-gray-800 hover:text-black hover:bg-gray-200 border border-gray-300"
+          className="h-8 w-8 bg-white border-2 border-gray-400 hover:border-gray-600 hover:bg-gray-100 shadow-sm"
         >
           {isCollapsed ? 
-            <ChevronRight className="h-4 w-4 text-black" /> : 
-            <ChevronLeft className="h-4 w-4 text-black" />
+            <ChevronRight className="h-4 w-4 text-gray-800 font-bold" /> : 
+            <ChevronLeft className="h-4 w-4 text-gray-800 font-bold" />
           }
         </Button>
       </div>

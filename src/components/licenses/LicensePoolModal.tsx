@@ -84,12 +84,12 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
             {pool ? 'Editar Contrato de Licenças' : 'Novo Contrato de Licenças'} - {typeLabels[licenseType]}
           </h2>
           <Button 
-            variant="ghost" 
+            variant="outline" 
             size="icon" 
             onClick={onClose}
-            className="text-gray-800 hover:text-black hover:bg-gray-200 border border-gray-300"
+            className="h-8 w-8 bg-white border-2 border-gray-400 hover:border-red-500 hover:bg-red-50 shadow-sm"
           >
-            <X className="h-4 w-4 text-black" />
+            <X className="h-4 w-4 text-gray-800 hover:text-red-600 font-bold" />
           </Button>
         </div>
 
