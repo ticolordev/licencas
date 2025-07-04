@@ -141,19 +141,6 @@ export const mockLicensePools: LicensePool[] = [
     updatedAt: '2024-01-15',
   },
   {
-    id: 'server-pool-2',
-    type: 'server',
-    name: 'SQL Server 2022 Standard',
-    totalLicenses: 5,
-    assignedLicenses: 3,
-    availableLicenses: 2,
-    cost: 3500.00,
-    expirationDate: '2025-12-31',
-    notes: 'Licenças de banco de dados',
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-15',
-  },
-  {
     id: 'server-pool-3',
     type: 'server',
     name: 'Veeam Backup & Replication',
@@ -179,7 +166,6 @@ export const mockLicensePools: LicensePool[] = [
     createdAt: '2024-01-01',
     updatedAt: '2024-01-15',
   },
-  // Removido Windows Server 2022 Datacenter para não aparecer em "Licenças Expirando"
 ];
 
 export const mockLicenseAssignments: LicenseAssignment[] = [
@@ -230,17 +216,6 @@ export const mockLicenseAssignments: LicenseAssignment[] = [
     notes: 'Servidor de domínio',
     createdAt: '2024-01-18',
     updatedAt: '2024-01-18',
-  },
-  {
-    id: 'assign-5',
-    type: 'server',
-    poolId: 'server-pool-2',
-    serverName: 'SRV-DB-01',
-    licenseKey: 'SQL22-XXXXX-XXXXX-XXXXX',
-    isActive: true,
-    notes: 'Servidor de banco principal',
-    createdAt: '2024-01-19',
-    updatedAt: '2024-01-19',
   },
   {
     id: 'assign-6',
