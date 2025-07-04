@@ -91,7 +91,7 @@ export function Microsoft365PoolModal({ isOpen, onClose, onSave, pool }: Microso
             onClick={onClose}
             className="text-gray-800 hover:text-black hover:bg-gray-200 border border-gray-300"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 text-black" />
           </Button>
         </div>
 
