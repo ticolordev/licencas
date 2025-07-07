@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Edit, Trash2, List, Calendar, ChevronUp, ChevronDown, Package, Monitor, Server, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,14 @@ const typeColors = {
 };
 
 export function GenericLicenseDashboard({ licenseType, title }: GenericLicenseDashboardProps) {
-  const { state, dispatch } = useLicense();
+  const { 
+    state, 
+    saveLicensePool, 
+    deleteLicensePool,
+    saveLicenseAssignment,
+    deleteLicenseAssignment
+  } = useLicense();
+  
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [editingPool, setEditingPool] = useState<LicensePool | null>(null);
@@ -39,12 +46,6 @@ export function GenericLicenseDashboard({ licenseType, title }: GenericLicenseDa
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const Icon = typeIcons[licenseType];
-
-  // Force re-render when state changes
-  const [, forceUpdate] = useState({});
-  useEffect(() => {
-    forceUpdate({});
-  }, [state.licensePools, state.licenseAssignments]);
 
   const poolsOfType = state.licensePools.filter(pool => pool.type === licenseType);
   const assignmentsOfType = state.licenseAssignments.filter(assignment => assignment.type === licenseType);
@@ -59,44 +60,37 @@ export function GenericLicenseDashboard({ licenseType, title }: GenericLicenseDa
     setIsPoolModalOpen(true);
   };
 
-  const handleDeletePool = (id: string) => {
+  const handleDeletePool = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este contrato de licenças?')) {
-      // Remove assignments for this pool
-      const assignmentsWithThisPool = state.licenseAssignments.filter(assignment => 
-        assignment.poolId === id
-      );
-      
-      assignmentsWithThisPool.forEach(assignment => {
-        dispatch({ type: 'DELETE_LICENSE_ASSIGNMENT', payload: assignment.id });
-      });
+      try {
+        // Remove assignments for this pool
+        const assignmentsWithThisPool = state.licenseAssignments.filter(assignment => 
+          assignment.poolId === id
+        );
+        
+        for (const assignment of assignmentsWithThisPool) {
+          await deleteLicenseAssignment(assignment.id);
+        }
 
-      dispatch({ type: 'DELETE_LICENSE_POOL', payload: id });
-      toast.success('Contrato de licenças excluído com sucesso!');
+        await deleteLicensePool(id);
+        toast.success('Contrato de licenças excluído com sucesso!');
+      } catch (error) {
+        // Error is already handled in the service
+      }
     }
   };
 
-  const handleSavePool = (poolData: Partial<LicensePool>) => {
+  const handleSavePool = async (poolData: Partial<LicensePool>) => {
     try {
+      await saveLicensePool(poolData);
       if (editingPool) {
-        dispatch({ type: 'UPDATE_LICENSE_POOL', payload: poolData as LicensePool });
         toast.success('Contrato de licenças atualizado com sucesso!');
       } else {
-        const newPool = {
-          ...poolData,
-          id: crypto.randomUUID(),
-          type: licenseType,
-          assignedLicenses: 0,
-          availableLicenses: poolData.totalLicenses || 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as LicensePool;
-        
-        dispatch({ type: 'ADD_LICENSE_POOL', payload: newPool });
         toast.success('Contrato de licenças criado com sucesso!');
       }
+      setIsPoolModalOpen(false);
     } catch (error) {
-      console.error('Erro ao salvar pool:', error);
-      toast.error('Erro ao salvar contrato de licenças');
+      // Error is already handled in the service
     }
   };
 
@@ -110,33 +104,28 @@ export function GenericLicenseDashboard({ licenseType, title }: GenericLicenseDa
     setIsAssignmentModalOpen(true);
   };
 
-  const handleDeleteAssignment = (id: string) => {
+  const handleDeleteAssignment = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta atribuição?')) {
-      dispatch({ type: 'DELETE_LICENSE_ASSIGNMENT', payload: id });
-      toast.success('Atribuição excluída com sucesso!');
+      try {
+        await deleteLicenseAssignment(id);
+        toast.success('Atribuição excluída com sucesso!');
+      } catch (error) {
+        // Error is already handled in the service
+      }
     }
   };
 
-  const handleSaveAssignment = (assignmentData: Partial<LicenseAssignment>) => {
+  const handleSaveAssignment = async (assignmentData: Partial<LicenseAssignment>) => {
     try {
+      await saveLicenseAssignment(assignmentData);
       if (editingAssignment) {
-        dispatch({ type: 'UPDATE_LICENSE_ASSIGNMENT', payload: assignmentData as LicenseAssignment });
         toast.success('Atribuição atualizada com sucesso!');
       } else {
-        const newAssignment = {
-          ...assignmentData,
-          id: crypto.randomUUID(),
-          type: licenseType,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as LicenseAssignment;
-        
-        dispatch({ type: 'ADD_LICENSE_ASSIGNMENT', payload: newAssignment });
         toast.success('Atribuição criada com sucesso!');
       }
+      setIsAssignmentModalOpen(false);
     } catch (error) {
-      console.error('Erro ao salvar atribuição:', error);
-      toast.error('Erro ao salvar atribuição');
+      // Error is already handled in the service
     }
   };
 

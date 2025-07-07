@@ -1,5 +1,13 @@
-import React, { createContext, useContext, useReducer, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useCallback, useEffect } from 'react';
 import { License, LicenseStats, Microsoft365LicensePool, Microsoft365User, LicensePool, LicenseAssignment } from '@/types/license';
+import {
+  microsoft365PoolsService,
+  microsoft365UsersService,
+  licensePoolsService,
+  licenseAssignmentsService,
+  legacyLicensesService
+} from '@/services/supabaseService';
+import { toast } from 'sonner';
 
 interface LicenseState {
   licenses: License[];
@@ -9,9 +17,13 @@ interface LicenseState {
   licenseAssignments: LicenseAssignment[];
   selectedCategory: string;
   searchTerm: string;
+  loading: boolean;
+  error: string | null;
 }
 
 type LicenseAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'ADD_LICENSE'; payload: License }
   | { type: 'UPDATE_LICENSE'; payload: License }
   | { type: 'DELETE_LICENSE'; payload: string }
@@ -43,6 +55,8 @@ const initialState: LicenseState = {
   licenseAssignments: [],
   selectedCategory: 'dashboard',
   searchTerm: '',
+  loading: false,
+  error: null,
 };
 
 const LicenseContext = createContext<{
@@ -51,230 +65,296 @@ const LicenseContext = createContext<{
   getStats: () => Record<string, LicenseStats>;
   getFilteredLicenses: () => License[];
   updatePoolAvailability: () => void;
+  // Database operations
+  loadAllData: () => Promise<void>;
+  saveMicrosoft365Pool: (pool: Partial<Microsoft365LicensePool>) => Promise<void>;
+  deleteMicrosoft365Pool: (id: string) => Promise<void>;
+  saveMicrosoft365User: (user: Partial<Microsoft365User>) => Promise<void>;
+  deleteMicrosoft365User: (id: string) => Promise<void>;
+  saveLicensePool: (pool: Partial<LicensePool>) => Promise<void>;
+  deleteLicensePool: (id: string) => Promise<void>;
+  saveLicenseAssignment: (assignment: Partial<LicenseAssignment>) => Promise<void>;
+  deleteLicenseAssignment: (id: string) => Promise<void>;
+  saveLicense: (license: Partial<License>) => Promise<void>;
+  deleteLicense: (id: string) => Promise<void>;
 } | null>(null);
 
 function licenseReducer(state: LicenseState, action: LicenseAction): LicenseState {
-  let newState: LicenseState;
-  
   switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
     case 'ADD_LICENSE':
-      newState = {
-        ...state,
-        licenses: [...state.licenses, action.payload],
-      };
-      break;
+      return { ...state, licenses: [...state.licenses, action.payload] };
     case 'UPDATE_LICENSE':
-      newState = {
+      return {
         ...state,
         licenses: state.licenses.map((license) =>
           license.id === action.payload.id ? action.payload : license
         ),
       };
-      break;
     case 'DELETE_LICENSE':
-      newState = {
+      return {
         ...state,
         licenses: state.licenses.filter((license) => license.id !== action.payload),
       };
-      break;
     case 'SET_CATEGORY':
-      newState = {
-        ...state,
-        selectedCategory: action.payload,
-      };
-      break;
+      return { ...state, selectedCategory: action.payload };
     case 'SET_SEARCH':
-      newState = {
-        ...state,
-        searchTerm: action.payload,
-      };
-      break;
+      return { ...state, searchTerm: action.payload };
     case 'LOAD_LICENSES':
-      newState = {
-        ...state,
-        licenses: action.payload,
-      };
-      break;
+      return { ...state, licenses: action.payload };
     case 'ADD_M365_POOL':
-      newState = {
-        ...state,
-        microsoft365Pools: [...state.microsoft365Pools, action.payload],
-      };
-      break;
+      return { ...state, microsoft365Pools: [...state.microsoft365Pools, action.payload] };
     case 'UPDATE_M365_POOL':
-      newState = {
+      return {
         ...state,
         microsoft365Pools: state.microsoft365Pools.map((pool) =>
           pool.id === action.payload.id ? action.payload : pool
         ),
       };
-      break;
     case 'DELETE_M365_POOL':
-      newState = {
+      return {
         ...state,
         microsoft365Pools: state.microsoft365Pools.filter((pool) => pool.id !== action.payload),
       };
-      break;
     case 'LOAD_M365_POOLS':
-      newState = {
-        ...state,
-        microsoft365Pools: action.payload,
-      };
-      break;
+      return { ...state, microsoft365Pools: action.payload };
     case 'ADD_M365_USER':
-      newState = {
-        ...state,
-        microsoft365Users: [...state.microsoft365Users, action.payload],
-      };
-      break;
+      return { ...state, microsoft365Users: [...state.microsoft365Users, action.payload] };
     case 'UPDATE_M365_USER':
-      newState = {
+      return {
         ...state,
         microsoft365Users: state.microsoft365Users.map((user) =>
           user.id === action.payload.id ? action.payload : user
         ),
       };
-      break;
     case 'DELETE_M365_USER':
-      newState = {
+      return {
         ...state,
         microsoft365Users: state.microsoft365Users.filter((user) => user.id !== action.payload),
       };
-      break;
     case 'LOAD_M365_USERS':
-      newState = {
-        ...state,
-        microsoft365Users: action.payload,
-      };
-      break;
+      return { ...state, microsoft365Users: action.payload };
     case 'ADD_LICENSE_POOL':
-      newState = {
-        ...state,
-        licensePools: [...state.licensePools, action.payload],
-      };
-      break;
+      return { ...state, licensePools: [...state.licensePools, action.payload] };
     case 'UPDATE_LICENSE_POOL':
-      newState = {
+      return {
         ...state,
         licensePools: state.licensePools.map((pool) =>
           pool.id === action.payload.id ? action.payload : pool
         ),
       };
-      break;
     case 'DELETE_LICENSE_POOL':
-      newState = {
+      return {
         ...state,
         licensePools: state.licensePools.filter((pool) => pool.id !== action.payload),
       };
-      break;
     case 'LOAD_LICENSE_POOLS':
-      newState = {
-        ...state,
-        licensePools: action.payload,
-      };
-      break;
+      return { ...state, licensePools: action.payload };
     case 'ADD_LICENSE_ASSIGNMENT':
-      newState = {
-        ...state,
-        licenseAssignments: [...state.licenseAssignments, action.payload],
-      };
-      break;
+      return { ...state, licenseAssignments: [...state.licenseAssignments, action.payload] };
     case 'UPDATE_LICENSE_ASSIGNMENT':
-      newState = {
+      return {
         ...state,
         licenseAssignments: state.licenseAssignments.map((assignment) =>
           assignment.id === action.payload.id ? action.payload : assignment
         ),
       };
-      break;
     case 'DELETE_LICENSE_ASSIGNMENT':
-      newState = {
+      return {
         ...state,
         licenseAssignments: state.licenseAssignments.filter((assignment) => assignment.id !== action.payload),
       };
-      break;
     case 'LOAD_LICENSE_ASSIGNMENTS':
-      newState = {
-        ...state,
-        licenseAssignments: action.payload,
-      };
-      break;
+      return { ...state, licenseAssignments: action.payload };
     default:
       return state;
   }
-
-  // Automatically update pool availability after any Microsoft 365 change
-  if (action.type.includes('M365')) {
-    const updatedPools = newState.microsoft365Pools.map(pool => {
-      const assignedCount = newState.microsoft365Users.filter(user => 
-        user.assignedLicenses.includes(pool.id)
-      ).length;
-      
-      return {
-        ...pool,
-        assignedLicenses: assignedCount,
-        availableLicenses: pool.totalLicenses - assignedCount
-      };
-    });
-    
-    newState = {
-      ...newState,
-      microsoft365Pools: updatedPools,
-    };
-  }
-
-  // Automatically update license pool availability
-  if (action.type.includes('LICENSE_POOL') || action.type.includes('LICENSE_ASSIGNMENT')) {
-    const updatedLicensePools = newState.licensePools.map(pool => {
-      const assignedCount = newState.licenseAssignments.filter(assignment => 
-        assignment.poolId === pool.id && assignment.isActive
-      ).length;
-      
-      return {
-        ...pool,
-        assignedLicenses: assignedCount,
-        availableLicenses: pool.totalLicenses - assignedCount
-      };
-    });
-    
-    newState = {
-      ...newState,
-      licensePools: updatedLicensePools,
-    };
-  }
-
-  return newState;
 }
 
 export function LicenseProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(licenseReducer, initialState);
 
-  const updatePoolAvailability = useCallback(() => {
-    const updatedPools = state.microsoft365Pools.map(pool => {
-      const assignedCount = state.microsoft365Users.filter(user => 
-        user.assignedLicenses.includes(pool.id)
-      ).length;
-      
-      return {
-        ...pool,
-        assignedLicenses: assignedCount,
-        availableLicenses: pool.totalLicenses - assignedCount
-      };
-    });
-    
-    // Only update if there are actual changes
-    const hasChanges = updatedPools.some((pool, index) => {
-      const currentPool = state.microsoft365Pools[index];
-      return currentPool && (
-        currentPool.assignedLicenses !== pool.assignedLicenses ||
-        currentPool.availableLicenses !== pool.availableLicenses
-      );
-    });
+  // Load all data from database
+  const loadAllData = useCallback(async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: 'SET_ERROR', payload: null });
 
-    if (hasChanges) {
-      dispatch({ type: 'LOAD_M365_POOLS', payload: updatedPools });
+      const [
+        licenses,
+        microsoft365Pools,
+        microsoft365Users,
+        licensePools,
+        licenseAssignments
+      ] = await Promise.all([
+        legacyLicensesService.getAll(),
+        microsoft365PoolsService.getAll(),
+        microsoft365UsersService.getAll(),
+        licensePoolsService.getAll(),
+        licenseAssignmentsService.getAll()
+      ]);
+
+      dispatch({ type: 'LOAD_LICENSES', payload: licenses });
+      dispatch({ type: 'LOAD_M365_POOLS', payload: microsoft365Pools });
+      dispatch({ type: 'LOAD_M365_USERS', payload: microsoft365Users });
+      dispatch({ type: 'LOAD_LICENSE_POOLS', payload: licensePools });
+      dispatch({ type: 'LOAD_LICENSE_ASSIGNMENTS', payload: licenseAssignments });
+    } catch (error) {
+      console.error('Error loading data:', error);
+      dispatch({ type: 'SET_ERROR', payload: 'Erro ao carregar dados' });
+      toast.error('Erro ao carregar dados do banco');
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
-  }, [state.microsoft365Pools, state.microsoft365Users]);
+  }, []);
+
+  // Microsoft 365 Pool operations
+  const saveMicrosoft365Pool = useCallback(async (pool: Partial<Microsoft365LicensePool>) => {
+    try {
+      if (pool.id && state.microsoft365Pools.find(p => p.id === pool.id)) {
+        const updated = await microsoft365PoolsService.update(pool.id, pool);
+        dispatch({ type: 'UPDATE_M365_POOL', payload: updated });
+      } else {
+        const created = await microsoft365PoolsService.create(pool);
+        dispatch({ type: 'ADD_M365_POOL', payload: created });
+      }
+    } catch (error) {
+      console.error('Error saving Microsoft 365 pool:', error);
+      toast.error('Erro ao salvar contrato de licenças');
+      throw error;
+    }
+  }, [state.microsoft365Pools]);
+
+  const deleteMicrosoft365Pool = useCallback(async (id: string) => {
+    try {
+      await microsoft365PoolsService.delete(id);
+      dispatch({ type: 'DELETE_M365_POOL', payload: id });
+    } catch (error) {
+      console.error('Error deleting Microsoft 365 pool:', error);
+      toast.error('Erro ao excluir contrato de licenças');
+      throw error;
+    }
+  }, []);
+
+  // Microsoft 365 User operations
+  const saveMicrosoft365User = useCallback(async (user: Partial<Microsoft365User>) => {
+    try {
+      if (user.id && state.microsoft365Users.find(u => u.id === user.id)) {
+        const updated = await microsoft365UsersService.update(user.id, user);
+        dispatch({ type: 'UPDATE_M365_USER', payload: updated });
+      } else {
+        const created = await microsoft365UsersService.create(user);
+        dispatch({ type: 'ADD_M365_USER', payload: created });
+      }
+    } catch (error) {
+      console.error('Error saving Microsoft 365 user:', error);
+      toast.error('Erro ao salvar usuário');
+      throw error;
+    }
+  }, [state.microsoft365Users]);
+
+  const deleteMicrosoft365User = useCallback(async (id: string) => {
+    try {
+      await microsoft365UsersService.delete(id);
+      dispatch({ type: 'DELETE_M365_USER', payload: id });
+    } catch (error) {
+      console.error('Error deleting Microsoft 365 user:', error);
+      toast.error('Erro ao excluir usuário');
+      throw error;
+    }
+  }, []);
+
+  // License Pool operations
+  const saveLicensePool = useCallback(async (pool: Partial<LicensePool>) => {
+    try {
+      if (pool.id && state.licensePools.find(p => p.id === pool.id)) {
+        const updated = await licensePoolsService.update(pool.id, pool);
+        dispatch({ type: 'UPDATE_LICENSE_POOL', payload: updated });
+      } else {
+        const created = await licensePoolsService.create(pool);
+        dispatch({ type: 'ADD_LICENSE_POOL', payload: created });
+      }
+    } catch (error) {
+      console.error('Error saving license pool:', error);
+      toast.error('Erro ao salvar contrato de licenças');
+      throw error;
+    }
+  }, [state.licensePools]);
+
+  const deleteLicensePool = useCallback(async (id: string) => {
+    try {
+      await licensePoolsService.delete(id);
+      dispatch({ type: 'DELETE_LICENSE_POOL', payload: id });
+    } catch (error) {
+      console.error('Error deleting license pool:', error);
+      toast.error('Erro ao excluir contrato de licenças');
+      throw error;
+    }
+  }, []);
+
+  // License Assignment operations
+  const saveLicenseAssignment = useCallback(async (assignment: Partial<LicenseAssignment>) => {
+    try {
+      if (assignment.id && state.licenseAssignments.find(a => a.id === assignment.id)) {
+        const updated = await licenseAssignmentsService.update(assignment.id, assignment);
+        dispatch({ type: 'UPDATE_LICENSE_ASSIGNMENT', payload: updated });
+      } else {
+        const created = await licenseAssignmentsService.create(assignment);
+        dispatch({ type: 'ADD_LICENSE_ASSIGNMENT', payload: created });
+      }
+    } catch (error) {
+      console.error('Error saving license assignment:', error);
+      toast.error('Erro ao salvar atribuição');
+      throw error;
+    }
+  }, [state.licenseAssignments]);
+
+  const deleteLicenseAssignment = useCallback(async (id: string) => {
+    try {
+      await licenseAssignmentsService.delete(id);
+      dispatch({ type: 'DELETE_LICENSE_ASSIGNMENT', payload: id });
+    } catch (error) {
+      console.error('Error deleting license assignment:', error);
+      toast.error('Erro ao excluir atribuição');
+      throw error;
+    }
+  }, []);
+
+  // Legacy License operations
+  const saveLicense = useCallback(async (license: Partial<License>) => {
+    try {
+      if (license.id && state.licenses.find(l => l.id === license.id)) {
+        const updated = await legacyLicensesService.update(license.id, license);
+        dispatch({ type: 'UPDATE_LICENSE', payload: updated });
+      } else {
+        const created = await legacyLicensesService.create(license);
+        dispatch({ type: 'ADD_LICENSE', payload: created });
+      }
+    } catch (error) {
+      console.error('Error saving license:', error);
+      toast.error('Erro ao salvar licença');
+      throw error;
+    }
+  }, [state.licenses]);
+
+  const deleteLicense = useCallback(async (id: string) => {
+    try {
+      await legacyLicensesService.delete(id);
+      dispatch({ type: 'DELETE_LICENSE', payload: id });
+    } catch (error) {
+      console.error('Error deleting license:', error);
+      toast.error('Erro ao excluir licença');
+      throw error;
+    }
+  }, []);
+
+  const updatePoolAvailability = useCallback(() => {
+    // This is now handled automatically by the database
+    // We can trigger a reload if needed
+  }, []);
 
   const getStats = useCallback((): Record<string, LicenseStats> => {
     const stats: Record<string, LicenseStats> = {};
@@ -282,16 +362,10 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
 
     types.forEach((type) => {
       if (type === 'microsoft365') {
-        // Calcular totais consolidados
         const totalLicenses = state.microsoft365Pools.reduce((sum, pool) => sum + pool.totalLicenses, 0);
-        
-        // Contar usuários ativos e inativos
         const activeUsers = state.microsoft365Users.filter(user => user.isActive && user.assignedLicenses.length > 0);
-        
-        // Contar licenças atribuídas (considerando que um usuário pode ter múltiplas licenças)
         const activeLicensesCount = activeUsers.reduce((sum, user) => sum + user.assignedLicenses.length, 0);
         
-        // Contar licenças expiradas (pools expirados)
         const now = new Date();
         const expiredPools = state.microsoft365Pools.filter((pool) => {
           if (!pool.expirationDate) return false;
@@ -302,27 +376,23 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         stats[type] = {
           total: totalLicenses,
           active: activeLicensesCount,
-          inactive: 0, // Não usado mais
+          inactive: 0,
           expired: expiredLicensesCount,
-          expiringSoon: 0, // Calculado separadamente em ExpiringLicenses
+          expiringSoon: 0,
         };
       } else {
-        // Para outros tipos, usar pools + licenças antigas
         const poolsOfType = state.licensePools.filter(pool => pool.type === type);
         const licensesOfType = state.licenses.filter((license) => license.type === type);
         const assignmentsOfType = state.licenseAssignments.filter(assignment => assignment.type === type);
         
-        // Total de licenças (pools + licenças antigas)
         const totalFromPools = poolsOfType.reduce((sum, pool) => sum + pool.totalLicenses, 0);
         const totalFromLicenses = licensesOfType.length;
         const total = totalFromPools + totalFromLicenses;
         
-        // Ativas (assignments ativos + licenças antigas ativas)
         const activeFromAssignments = assignmentsOfType.filter(assignment => assignment.isActive).length;
         const activeFromLicenses = licensesOfType.filter(license => license.isActive).length;
         const active = activeFromAssignments + activeFromLicenses;
         
-        // Expiradas (pools expirados + licenças antigas expiradas)
         const now = new Date();
         const expiredPools = poolsOfType.filter((pool) => {
           if (!pool.expirationDate) return false;
@@ -340,9 +410,9 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
         stats[type] = {
           total,
           active,
-          inactive: 0, // Não usado mais
+          inactive: 0,
           expired,
-          expiringSoon: 0, // Calculado separadamente em ExpiringLicenses
+          expiringSoon: 0,
         };
       }
     });
@@ -369,8 +439,30 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
     return filtered;
   }, [state.licenses, state.selectedCategory, state.searchTerm]);
 
+  // Load data on mount
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]);
+
   return (
-    <LicenseContext.Provider value={{ state, dispatch, getStats, getFilteredLicenses, updatePoolAvailability }}>
+    <LicenseContext.Provider value={{ 
+      state, 
+      dispatch, 
+      getStats, 
+      getFilteredLicenses, 
+      updatePoolAvailability,
+      loadAllData,
+      saveMicrosoft365Pool,
+      deleteMicrosoft365Pool,
+      saveMicrosoft365User,
+      deleteMicrosoft365User,
+      saveLicensePool,
+      deleteLicensePool,
+      saveLicenseAssignment,
+      deleteLicenseAssignment,
+      saveLicense,
+      deleteLicense
+    }}>
       {children}
     </LicenseContext.Provider>
   );

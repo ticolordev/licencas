@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/dashboard/Dashboard';
@@ -8,7 +8,6 @@ import { Microsoft365Dashboard } from '@/components/microsoft365/Microsoft365Das
 import { GenericLicenseDashboard } from '@/components/licenses/GenericLicenseDashboard';
 import { LicenseProvider, useLicense } from '@/contexts/LicenseContext';
 import { License } from '@/types/license';
-import { mockLicenses, mockMicrosoft365Pools, mockMicrosoft365Users, mockLicensePools, mockLicenseAssignments } from '@/data/mockData';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -21,20 +20,18 @@ const categoryTitles = {
 };
 
 function AppContent() {
-  const { state, dispatch, getFilteredLicenses } = useLicense();
+  const { 
+    state, 
+    dispatch, 
+    getFilteredLicenses, 
+    saveLicense, 
+    deleteLicense 
+  } = useLicense();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  // Load mock data on first render
-  useEffect(() => {
-    dispatch({ type: 'LOAD_LICENSES', payload: mockLicenses });
-    dispatch({ type: 'LOAD_M365_POOLS', payload: mockMicrosoft365Pools });
-    dispatch({ type: 'LOAD_M365_USERS', payload: mockMicrosoft365Users });
-    dispatch({ type: 'LOAD_LICENSE_POOLS', payload: mockLicensePools });
-    dispatch({ type: 'LOAD_LICENSE_ASSIGNMENTS', payload: mockLicenseAssignments });
-  }, [dispatch]);
 
   const handleAddLicense = () => {
     setEditingLicense(null);
@@ -46,20 +43,28 @@ function AppContent() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteLicense = (id: string) => {
+  const handleDeleteLicense = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta licença?')) {
-      dispatch({ type: 'DELETE_LICENSE', payload: id });
-      toast.success('Licença excluída com sucesso!');
+      try {
+        await deleteLicense(id);
+        toast.success('Licença excluída com sucesso!');
+      } catch (error) {
+        // Error is already handled in the service
+      }
     }
   };
 
-  const handleSaveLicense = (licenseData: Partial<License>) => {
-    if (editingLicense) {
-      dispatch({ type: 'UPDATE_LICENSE', payload: licenseData as License });
-      toast.success('Licença atualizada com sucesso!');
-    } else {
-      dispatch({ type: 'ADD_LICENSE', payload: licenseData as License });
-      toast.success('Licença criada com sucesso!');
+  const handleSaveLicense = async (licenseData: Partial<License>) => {
+    try {
+      await saveLicense(licenseData);
+      if (editingLicense) {
+        toast.success('Licença atualizada com sucesso!');
+      } else {
+        toast.success('Licença criada com sucesso!');
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      // Error is already handled in the service
     }
   };
 
@@ -83,6 +88,33 @@ function AppContent() {
   const filteredLicenses = getFilteredLicenses();
 
   const renderMainContent = () => {
+    if (state.loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-500">Carregando dados...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (state.error) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{state.error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     switch (state.selectedCategory) {
       case 'dashboard':
         return <Dashboard />;
