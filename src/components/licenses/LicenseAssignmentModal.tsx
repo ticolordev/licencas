@@ -42,6 +42,8 @@ export function LicenseAssignmentModal({
     notes: '',
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (assignment) {
       setFormData({ ...assignment });
@@ -59,7 +61,7 @@ export function LicenseAssignmentModal({
     }
   }, [assignment, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.poolId) {
@@ -76,18 +78,23 @@ export function LicenseAssignmentModal({
       alert('Por favor, informe o nome do dispositivo.');
       return;
     }
-    
-    const now = new Date().toISOString();
-    const assignmentData = {
-      ...formData,
-      id: assignment?.id || crypto.randomUUID(),
-      type: licenseType,
-      createdAt: assignment?.createdAt || now,
-      updatedAt: now,
-    };
 
-    onSave(assignmentData);
-    onClose();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const assignmentData = {
+        ...formData,
+        type: licenseType,
+      };
+
+      await onSave(assignmentData);
+    } catch (error) {
+      console.error('Error saving assignment:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -113,6 +120,7 @@ export function LicenseAssignmentModal({
             size="icon" 
             onClick={onClose}
             className="h-8 w-8 bg-white border-2 border-gray-400 hover:border-red-500 hover:bg-red-50 shadow-sm"
+            disabled={isSubmitting}
           >
             <X className="h-4 w-4 text-gray-800 hover:text-red-600 font-bold" />
           </Button>
@@ -124,6 +132,7 @@ export function LicenseAssignmentModal({
             <Select
               value={formData.poolId || ''}
               onValueChange={(value) => handleInputChange('poolId', value)}
+              disabled={isSubmitting}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um pool de licenças" />
@@ -159,6 +168,7 @@ export function LicenseAssignmentModal({
                 onChange={(e) => handleInputChange('serverName', e.target.value)}
                 placeholder="Ex: SRV-DB-01"
                 required
+                disabled={isSubmitting}
               />
             </div>
           ) : (
@@ -170,6 +180,7 @@ export function LicenseAssignmentModal({
                 onChange={(e) => handleInputChange('deviceName', e.target.value)}
                 placeholder="Ex: WS-ADMIN-01"
                 required
+                disabled={isSubmitting}
               />
             </div>
           )}
@@ -182,6 +193,7 @@ export function LicenseAssignmentModal({
               value={formData.userEmail || ''}
               onChange={(e) => handleInputChange('userEmail', e.target.value)}
               placeholder="usuario@empresa.com"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -193,6 +205,7 @@ export function LicenseAssignmentModal({
                 value={formData.serialNumber || ''}
                 onChange={(e) => handleInputChange('serialNumber', e.target.value)}
                 placeholder="Serial do dispositivo"
+                disabled={isSubmitting}
               />
             </div>
           )}
@@ -204,6 +217,7 @@ export function LicenseAssignmentModal({
               value={formData.licenseKey || ''}
               onChange={(e) => handleInputChange('licenseKey', e.target.value)}
               placeholder="XXXXX-XXXXX-XXXXX"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -212,6 +226,7 @@ export function LicenseAssignmentModal({
               id="isActive"
               checked={formData.isActive || false}
               onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+              disabled={isSubmitting}
             />
             <Label htmlFor="isActive">Atribuição Ativa</Label>
           </div>
@@ -224,15 +239,25 @@ export function LicenseAssignmentModal({
               onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Observações sobre esta atribuição"
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
-              {assignment ? 'Atualizar' : 'Criar'} Atribuição
+            <Button 
+              type="submit" 
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : (assignment ? 'Atualizar' : 'Criar')} Atribuição
             </Button>
           </div>
         </form>

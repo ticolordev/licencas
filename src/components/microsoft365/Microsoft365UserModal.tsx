@@ -23,6 +23,8 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
     isActive: true,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (user) {
       setFormData({ ...user });
@@ -36,24 +38,25 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
     }
   }, [user, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-    
-    const now = new Date().toISOString();
-    const userData = {
-      ...formData,
-      id: user?.id || crypto.randomUUID(),
-      createdAt: user?.createdAt || now,
-      updatedAt: now,
-    };
 
-    onSave(userData);
-    onClose();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error('Error saving user:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -88,6 +91,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
             size="icon" 
             onClick={onClose}
             className="h-8 w-8 bg-white border-2 border-gray-400 hover:border-red-500 hover:bg-red-50 shadow-sm"
+            disabled={isSubmitting}
           >
             <X className="h-4 w-4 text-gray-800 hover:text-red-600 font-bold" />
           </Button>
@@ -102,6 +106,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Nome completo"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -114,6 +119,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="usuario@empresa.com"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -122,6 +128,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
               id="isActive"
               checked={formData.isActive || false}
               onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+              disabled={isSubmitting}
             />
             <Label htmlFor="isActive">Usuário Ativo</Label>
           </div>
@@ -142,7 +149,7 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
                         id={`license-${pool.id}`}
                         checked={isAssigned}
                         onCheckedChange={(checked) => handleLicenseToggle(pool.id, checked as boolean)}
-                        disabled={!canAssign && !isAssigned}
+                        disabled={(!canAssign && !isAssigned) || isSubmitting}
                       />
                       <div className="flex-1 min-w-0">
                         <Label 
@@ -168,11 +175,20 @@ export function Microsoft365UserModal({ isOpen, onClose, onSave, user, available
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
-              {user ? 'Atualizar' : 'Criar'} Usuário
+            <Button 
+              type="submit" 
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : (user ? 'Atualizar' : 'Criar')} Usuário
             </Button>
           </div>
         </form>

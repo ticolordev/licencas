@@ -24,12 +24,12 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
   const [formData, setFormData] = useState<Partial<LicensePool>>({
     name: '',
     totalLicenses: 0,
-    assignedLicenses: 0,
-    availableLicenses: 0,
     cost: 0,
     expirationDate: '',
     notes: '',
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (pool) {
@@ -38,8 +38,6 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
       setFormData({
         name: '',
         totalLicenses: 0,
-        assignedLicenses: 0,
-        availableLicenses: 0,
         cost: 0,
         expirationDate: '',
         notes: '',
@@ -47,27 +45,32 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
     }
   }, [pool, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.totalLicenses) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-    
-    const now = new Date().toISOString();
-    const poolData = {
-      ...formData,
-      id: pool?.id || crypto.randomUUID(),
-      type: licenseType,
-      assignedLicenses: pool?.assignedLicenses || 0,
-      availableLicenses: (formData.totalLicenses || 0) - (pool?.assignedLicenses || 0),
-      createdAt: pool?.createdAt || now,
-      updatedAt: now,
-    };
 
-    onSave(poolData);
-    onClose();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
+    try {
+      const poolData = {
+        ...formData,
+        type: licenseType,
+        totalLicenses: Number(formData.totalLicenses) || 0,
+        cost: Number(formData.cost) || 0,
+      };
+
+      await onSave(poolData);
+    } catch (error) {
+      console.error('Error saving pool:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -88,6 +91,7 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
             size="icon" 
             onClick={onClose}
             className="h-8 w-8 bg-white border-2 border-gray-400 hover:border-red-500 hover:bg-red-50 shadow-sm"
+            disabled={isSubmitting}
           >
             <X className="h-4 w-4 text-gray-800 hover:text-red-600 font-bold" />
           </Button>
@@ -102,6 +106,7 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder={`Ex: ${typeLabels[licenseType]} Empresarial 2024`}
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -115,6 +120,7 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
               onChange={(e) => handleInputChange('totalLicenses', parseInt(e.target.value) || 0)}
               placeholder="0"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -128,6 +134,7 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
               value={formData.cost || ''}
               onChange={(e) => handleInputChange('cost', parseFloat(e.target.value) || 0)}
               placeholder="0.00"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -138,6 +145,7 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
               type="date"
               value={formData.expirationDate || ''}
               onChange={(e) => handleInputChange('expirationDate', e.target.value)}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -149,15 +157,25 @@ export function LicensePoolModal({ isOpen, onClose, onSave, pool, licenseType }:
               onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Observações sobre este contrato de licenças"
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              {pool ? 'Atualizar' : 'Criar'} Contrato
+            <Button 
+              type="submit" 
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : (pool ? 'Atualizar' : 'Criar')} Contrato
             </Button>
           </div>
         </form>
