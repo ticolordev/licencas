@@ -22,8 +22,8 @@ function convertDbToMicrosoft365Pool(dbPool: DatabaseMicrosoft365Pool): Microsof
     totalLicenses: dbPool.total_licenses,
     assignedLicenses: dbPool.assigned_licenses,
     availableLicenses: dbPool.available_licenses,
-    cost: dbPool.cost,
-    expirationDate: dbPool.expiration_date,
+    cost: dbPool.cost || 0,
+    expirationDate: dbPool.expiration_date || undefined,
     notes: dbPool.notes || '',
     createdAt: dbPool.created_at,
     updatedAt: dbPool.updated_at,
@@ -39,7 +39,7 @@ function convertMicrosoft365PoolToDb(pool: Partial<Microsoft365LicensePool>): Pa
   if (pool.assignedLicenses !== undefined) dbPool.assigned_licenses = pool.assignedLicenses;
   if (pool.availableLicenses !== undefined) dbPool.available_licenses = pool.availableLicenses;
   if (pool.cost !== undefined) dbPool.cost = pool.cost;
-  if (pool.expirationDate !== undefined) dbPool.expiration_date = pool.expirationDate;
+  if (pool.expirationDate !== undefined) dbPool.expiration_date = pool.expirationDate || null;
   if (pool.notes !== undefined) dbPool.notes = pool.notes;
   
   return dbPool;
@@ -77,8 +77,8 @@ function convertDbToLicensePool(dbPool: DatabaseLicensePool): LicensePool {
     totalLicenses: dbPool.total_licenses,
     assignedLicenses: dbPool.assigned_licenses,
     availableLicenses: dbPool.available_licenses,
-    cost: dbPool.cost,
-    expirationDate: dbPool.expiration_date,
+    cost: dbPool.cost || 0,
+    expirationDate: dbPool.expiration_date || undefined,
     notes: dbPool.notes || '',
     createdAt: dbPool.created_at,
     updatedAt: dbPool.updated_at,
@@ -95,7 +95,7 @@ function convertLicensePoolToDb(pool: Partial<LicensePool>): Partial<DatabaseLic
   if (pool.assignedLicenses !== undefined) dbPool.assigned_licenses = pool.assignedLicenses;
   if (pool.availableLicenses !== undefined) dbPool.available_licenses = pool.availableLicenses;
   if (pool.cost !== undefined) dbPool.cost = pool.cost;
-  if (pool.expirationDate !== undefined) dbPool.expiration_date = pool.expirationDate;
+  if (pool.expirationDate !== undefined) dbPool.expiration_date = pool.expirationDate || null;
   if (pool.notes !== undefined) dbPool.notes = pool.notes;
   
   return dbPool;
@@ -106,11 +106,11 @@ function convertDbToLicenseAssignment(dbAssignment: DatabaseLicenseAssignment): 
     id: dbAssignment.id,
     type: dbAssignment.type,
     poolId: dbAssignment.pool_id,
-    deviceName: dbAssignment.device_name,
-    serverName: dbAssignment.server_name,
-    userEmail: dbAssignment.user_email,
-    serialNumber: dbAssignment.serial_number,
-    licenseKey: dbAssignment.license_key,
+    deviceName: dbAssignment.device_name || undefined,
+    serverName: dbAssignment.server_name || undefined,
+    userEmail: dbAssignment.user_email || undefined,
+    serialNumber: dbAssignment.serial_number || undefined,
+    licenseKey: dbAssignment.license_key || undefined,
     isActive: dbAssignment.is_active,
     notes: dbAssignment.notes || '',
     createdAt: dbAssignment.created_at,
@@ -124,11 +124,11 @@ function convertLicenseAssignmentToDb(assignment: Partial<LicenseAssignment>): P
   if (assignment.id) dbAssignment.id = assignment.id;
   if (assignment.type) dbAssignment.type = assignment.type;
   if (assignment.poolId) dbAssignment.pool_id = assignment.poolId;
-  if (assignment.deviceName !== undefined) dbAssignment.device_name = assignment.deviceName;
-  if (assignment.serverName !== undefined) dbAssignment.server_name = assignment.serverName;
-  if (assignment.userEmail !== undefined) dbAssignment.user_email = assignment.userEmail;
-  if (assignment.serialNumber !== undefined) dbAssignment.serial_number = assignment.serialNumber;
-  if (assignment.licenseKey !== undefined) dbAssignment.license_key = assignment.licenseKey;
+  if (assignment.deviceName !== undefined) dbAssignment.device_name = assignment.deviceName || null;
+  if (assignment.serverName !== undefined) dbAssignment.server_name = assignment.serverName || null;
+  if (assignment.userEmail !== undefined) dbAssignment.user_email = assignment.userEmail || null;
+  if (assignment.serialNumber !== undefined) dbAssignment.serial_number = assignment.serialNumber || null;
+  if (assignment.licenseKey !== undefined) dbAssignment.license_key = assignment.licenseKey || null;
   if (assignment.isActive !== undefined) dbAssignment.is_active = assignment.isActive;
   if (assignment.notes !== undefined) dbAssignment.notes = assignment.notes;
   
@@ -139,6 +139,7 @@ function convertLicenseAssignmentToDb(assignment: Partial<LicenseAssignment>): P
 export const microsoft365PoolsService = {
   async getAll(): Promise<Microsoft365LicensePool[]> {
     try {
+      console.log('Fetching Microsoft 365 pools...');
       const { data, error } = await supabase
         .from('microsoft365_pools')
         .select('*')
@@ -149,6 +150,7 @@ export const microsoft365PoolsService = {
         throw new Error(`Erro ao buscar pools Microsoft 365: ${error.message}`);
       }
       
+      console.log('Microsoft 365 pools fetched:', data?.length || 0);
       return (data || []).map(convertDbToMicrosoft365Pool);
     } catch (error) {
       console.error('Service error:', error);
@@ -158,6 +160,8 @@ export const microsoft365PoolsService = {
 
   async create(pool: Partial<Microsoft365LicensePool>): Promise<Microsoft365LicensePool> {
     try {
+      console.log('Creating Microsoft 365 pool:', pool);
+      
       // Ensure required fields and defaults
       const poolData = {
         ...pool,
@@ -169,6 +173,7 @@ export const microsoft365PoolsService = {
       };
       
       const dbPool = convertMicrosoft365PoolToDb(poolData);
+      console.log('DB pool data:', dbPool);
       
       const { data, error } = await supabase
         .from('microsoft365_pools')
@@ -181,6 +186,7 @@ export const microsoft365PoolsService = {
         throw new Error(`Erro ao criar pool Microsoft 365: ${error.message}`);
       }
       
+      console.log('Microsoft 365 pool created:', data);
       return convertDbToMicrosoft365Pool(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -190,6 +196,7 @@ export const microsoft365PoolsService = {
 
   async update(id: string, pool: Partial<Microsoft365LicensePool>): Promise<Microsoft365LicensePool> {
     try {
+      console.log('Updating Microsoft 365 pool:', id, pool);
       const dbPool = convertMicrosoft365PoolToDb(pool);
       
       const { data, error } = await supabase
@@ -204,6 +211,7 @@ export const microsoft365PoolsService = {
         throw new Error(`Erro ao atualizar pool Microsoft 365: ${error.message}`);
       }
       
+      console.log('Microsoft 365 pool updated:', data);
       return convertDbToMicrosoft365Pool(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -213,6 +221,7 @@ export const microsoft365PoolsService = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting Microsoft 365 pool:', id);
       const { error } = await supabase
         .from('microsoft365_pools')
         .delete()
@@ -222,6 +231,8 @@ export const microsoft365PoolsService = {
         console.error('Error deleting Microsoft 365 pool:', error);
         throw new Error(`Erro ao excluir pool Microsoft 365: ${error.message}`);
       }
+      
+      console.log('Microsoft 365 pool deleted');
     } catch (error) {
       console.error('Service error:', error);
       throw error;
@@ -233,6 +244,7 @@ export const microsoft365PoolsService = {
 export const microsoft365UsersService = {
   async getAll(): Promise<Microsoft365User[]> {
     try {
+      console.log('Fetching Microsoft 365 users...');
       const { data, error } = await supabase
         .from('microsoft365_users')
         .select('*')
@@ -243,6 +255,7 @@ export const microsoft365UsersService = {
         throw new Error(`Erro ao buscar usuários Microsoft 365: ${error.message}`);
       }
       
+      console.log('Microsoft 365 users fetched:', data?.length || 0);
       return (data || []).map(convertDbToMicrosoft365User);
     } catch (error) {
       console.error('Service error:', error);
@@ -252,6 +265,8 @@ export const microsoft365UsersService = {
 
   async create(user: Partial<Microsoft365User>): Promise<Microsoft365User> {
     try {
+      console.log('Creating Microsoft 365 user:', user);
+      
       // Ensure required fields and defaults
       const userData = {
         ...user,
@@ -260,6 +275,7 @@ export const microsoft365UsersService = {
       };
       
       const dbUser = convertMicrosoft365UserToDb(userData);
+      console.log('DB user data:', dbUser);
       
       const { data, error } = await supabase
         .from('microsoft365_users')
@@ -272,6 +288,7 @@ export const microsoft365UsersService = {
         throw new Error(`Erro ao criar usuário Microsoft 365: ${error.message}`);
       }
       
+      console.log('Microsoft 365 user created:', data);
       return convertDbToMicrosoft365User(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -281,6 +298,7 @@ export const microsoft365UsersService = {
 
   async update(id: string, user: Partial<Microsoft365User>): Promise<Microsoft365User> {
     try {
+      console.log('Updating Microsoft 365 user:', id, user);
       const dbUser = convertMicrosoft365UserToDb(user);
       
       const { data, error } = await supabase
@@ -295,6 +313,7 @@ export const microsoft365UsersService = {
         throw new Error(`Erro ao atualizar usuário Microsoft 365: ${error.message}`);
       }
       
+      console.log('Microsoft 365 user updated:', data);
       return convertDbToMicrosoft365User(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -304,6 +323,7 @@ export const microsoft365UsersService = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting Microsoft 365 user:', id);
       const { error } = await supabase
         .from('microsoft365_users')
         .delete()
@@ -313,6 +333,8 @@ export const microsoft365UsersService = {
         console.error('Error deleting Microsoft 365 user:', error);
         throw new Error(`Erro ao excluir usuário Microsoft 365: ${error.message}`);
       }
+      
+      console.log('Microsoft 365 user deleted');
     } catch (error) {
       console.error('Service error:', error);
       throw error;
@@ -324,6 +346,7 @@ export const microsoft365UsersService = {
 export const licensePoolsService = {
   async getAll(): Promise<LicensePool[]> {
     try {
+      console.log('Fetching license pools...');
       const { data, error } = await supabase
         .from('license_pools')
         .select('*')
@@ -334,6 +357,7 @@ export const licensePoolsService = {
         throw new Error(`Erro ao buscar pools de licenças: ${error.message}`);
       }
       
+      console.log('License pools fetched:', data?.length || 0);
       return (data || []).map(convertDbToLicensePool);
     } catch (error) {
       console.error('Service error:', error);
@@ -343,6 +367,8 @@ export const licensePoolsService = {
 
   async create(pool: Partial<LicensePool>): Promise<LicensePool> {
     try {
+      console.log('Creating license pool:', pool);
+      
       // Ensure required fields and defaults
       const poolData = {
         ...pool,
@@ -354,6 +380,7 @@ export const licensePoolsService = {
       };
       
       const dbPool = convertLicensePoolToDb(poolData);
+      console.log('DB pool data:', dbPool);
       
       const { data, error } = await supabase
         .from('license_pools')
@@ -366,6 +393,7 @@ export const licensePoolsService = {
         throw new Error(`Erro ao criar pool de licenças: ${error.message}`);
       }
       
+      console.log('License pool created:', data);
       return convertDbToLicensePool(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -375,6 +403,7 @@ export const licensePoolsService = {
 
   async update(id: string, pool: Partial<LicensePool>): Promise<LicensePool> {
     try {
+      console.log('Updating license pool:', id, pool);
       const dbPool = convertLicensePoolToDb(pool);
       
       const { data, error } = await supabase
@@ -389,6 +418,7 @@ export const licensePoolsService = {
         throw new Error(`Erro ao atualizar pool de licenças: ${error.message}`);
       }
       
+      console.log('License pool updated:', data);
       return convertDbToLicensePool(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -398,6 +428,7 @@ export const licensePoolsService = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting license pool:', id);
       const { error } = await supabase
         .from('license_pools')
         .delete()
@@ -407,6 +438,8 @@ export const licensePoolsService = {
         console.error('Error deleting license pool:', error);
         throw new Error(`Erro ao excluir pool de licenças: ${error.message}`);
       }
+      
+      console.log('License pool deleted');
     } catch (error) {
       console.error('Service error:', error);
       throw error;
@@ -418,6 +451,7 @@ export const licensePoolsService = {
 export const licenseAssignmentsService = {
   async getAll(): Promise<LicenseAssignment[]> {
     try {
+      console.log('Fetching license assignments...');
       const { data, error } = await supabase
         .from('license_assignments')
         .select('*')
@@ -428,6 +462,7 @@ export const licenseAssignmentsService = {
         throw new Error(`Erro ao buscar atribuições de licenças: ${error.message}`);
       }
       
+      console.log('License assignments fetched:', data?.length || 0);
       return (data || []).map(convertDbToLicenseAssignment);
     } catch (error) {
       console.error('Service error:', error);
@@ -437,6 +472,8 @@ export const licenseAssignmentsService = {
 
   async create(assignment: Partial<LicenseAssignment>): Promise<LicenseAssignment> {
     try {
+      console.log('Creating license assignment:', assignment);
+      
       // Ensure required fields and defaults
       const assignmentData = {
         ...assignment,
@@ -445,6 +482,7 @@ export const licenseAssignmentsService = {
       };
       
       const dbAssignment = convertLicenseAssignmentToDb(assignmentData);
+      console.log('DB assignment data:', dbAssignment);
       
       const { data, error } = await supabase
         .from('license_assignments')
@@ -457,6 +495,7 @@ export const licenseAssignmentsService = {
         throw new Error(`Erro ao criar atribuição de licença: ${error.message}`);
       }
       
+      console.log('License assignment created:', data);
       return convertDbToLicenseAssignment(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -466,6 +505,7 @@ export const licenseAssignmentsService = {
 
   async update(id: string, assignment: Partial<LicenseAssignment>): Promise<LicenseAssignment> {
     try {
+      console.log('Updating license assignment:', id, assignment);
       const dbAssignment = convertLicenseAssignmentToDb(assignment);
       
       const { data, error } = await supabase
@@ -480,6 +520,7 @@ export const licenseAssignmentsService = {
         throw new Error(`Erro ao atualizar atribuição de licença: ${error.message}`);
       }
       
+      console.log('License assignment updated:', data);
       return convertDbToLicenseAssignment(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -489,6 +530,7 @@ export const licenseAssignmentsService = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting license assignment:', id);
       const { error } = await supabase
         .from('license_assignments')
         .delete()
@@ -498,6 +540,8 @@ export const licenseAssignmentsService = {
         console.error('Error deleting license assignment:', error);
         throw new Error(`Erro ao excluir atribuição de licença: ${error.message}`);
       }
+      
+      console.log('License assignment deleted');
     } catch (error) {
       console.error('Service error:', error);
       throw error;
@@ -509,6 +553,7 @@ export const licenseAssignmentsService = {
 export const legacyLicensesService = {
   async getAll(): Promise<License[]> {
     try {
+      console.log('Fetching legacy licenses...');
       const { data, error } = await supabase
         .from('legacy_licenses')
         .select('*')
@@ -519,6 +564,7 @@ export const legacyLicensesService = {
         throw new Error(`Erro ao buscar licenças legadas: ${error.message}`);
       }
       
+      console.log('Legacy licenses fetched:', data?.length || 0);
       return (data || []).map((dbLicense: DatabaseLegacyLicense) => this.convertDbToLicense(dbLicense));
     } catch (error) {
       console.error('Service error:', error);
@@ -528,6 +574,8 @@ export const legacyLicensesService = {
 
   async create(license: Partial<License>): Promise<License> {
     try {
+      console.log('Creating legacy license:', license);
+      
       // Ensure required fields and defaults
       const licenseData = {
         ...license,
@@ -540,33 +588,35 @@ export const legacyLicensesService = {
         name: licenseData.name,
         type: licenseData.type,
         is_active: licenseData.isActive,
-        expiration_date: licenseData.expirationDate,
+        expiration_date: licenseData.expirationDate || null,
         cost: licenseData.cost,
         notes: licenseData.notes,
         // Type-specific fields
         ...(licenseData.type === 'microsoft365' && {
-          plan_type: (licenseData as any).planType,
-          assigned_user: (licenseData as any).assignedUser,
-          user_email: (licenseData as any).userEmail,
+          plan_type: (licenseData as any).planType || null,
+          assigned_user: (licenseData as any).assignedUser || null,
+          user_email: (licenseData as any).userEmail || null,
         }),
         ...(licenseData.type === 'sophos' && {
-          product_type: (licenseData as any).productType,
-          device_count: (licenseData as any).deviceCount,
-          serial_number: (licenseData as any).serialNumber,
+          product_type: (licenseData as any).productType || null,
+          device_count: (licenseData as any).deviceCount || null,
+          serial_number: (licenseData as any).serialNumber || null,
         }),
         ...(licenseData.type === 'server' && {
-          product_name: (licenseData as any).productName,
-          version: (licenseData as any).version,
-          server_name: (licenseData as any).serverName,
-          license_key: (licenseData as any).licenseKey,
+          product_name: (licenseData as any).productName || null,
+          version: (licenseData as any).version || null,
+          server_name: (licenseData as any).serverName || null,
+          license_key: (licenseData as any).licenseKey || null,
         }),
         ...(licenseData.type === 'windows' && {
-          windows_type: (licenseData as any).windowsType,
-          version: (licenseData as any).version,
-          device_name: (licenseData as any).deviceName,
-          license_key: (licenseData as any).licenseKey,
+          windows_type: (licenseData as any).windowsType || null,
+          version: (licenseData as any).version || null,
+          device_name: (licenseData as any).deviceName || null,
+          license_key: (licenseData as any).licenseKey || null,
         }),
       };
+
+      console.log('DB license data:', dbLicense);
 
       const { data, error } = await supabase
         .from('legacy_licenses')
@@ -579,6 +629,7 @@ export const legacyLicensesService = {
         throw new Error(`Erro ao criar licença legada: ${error.message}`);
       }
       
+      console.log('Legacy license created:', data);
       return this.convertDbToLicense(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -588,35 +639,37 @@ export const legacyLicensesService = {
 
   async update(id: string, license: Partial<License>): Promise<License> {
     try {
+      console.log('Updating legacy license:', id, license);
+      
       const dbLicense: Partial<DatabaseLegacyLicense> = {
         name: license.name,
         type: license.type,
         is_active: license.isActive,
-        expiration_date: license.expirationDate,
+        expiration_date: license.expirationDate || null,
         cost: license.cost,
         notes: license.notes,
         // Type-specific fields
         ...(license.type === 'microsoft365' && {
-          plan_type: (license as any).planType,
-          assigned_user: (license as any).assignedUser,
-          user_email: (license as any).userEmail,
+          plan_type: (license as any).planType || null,
+          assigned_user: (license as any).assignedUser || null,
+          user_email: (license as any).userEmail || null,
         }),
         ...(license.type === 'sophos' && {
-          product_type: (license as any).productType,
-          device_count: (license as any).deviceCount,
-          serial_number: (license as any).serialNumber,
+          product_type: (license as any).productType || null,
+          device_count: (license as any).deviceCount || null,
+          serial_number: (license as any).serialNumber || null,
         }),
         ...(license.type === 'server' && {
-          product_name: (license as any).productName,
-          version: (license as any).version,
-          server_name: (license as any).serverName,
-          license_key: (license as any).licenseKey,
+          product_name: (license as any).productName || null,
+          version: (license as any).version || null,
+          server_name: (license as any).serverName || null,
+          license_key: (license as any).licenseKey || null,
         }),
         ...(license.type === 'windows' && {
-          windows_type: (license as any).windowsType,
-          version: (license as any).version,
-          device_name: (license as any).deviceName,
-          license_key: (license as any).licenseKey,
+          windows_type: (license as any).windowsType || null,
+          version: (license as any).version || null,
+          device_name: (license as any).deviceName || null,
+          license_key: (license as any).licenseKey || null,
         }),
       };
 
@@ -632,6 +685,7 @@ export const legacyLicensesService = {
         throw new Error(`Erro ao atualizar licença legada: ${error.message}`);
       }
       
+      console.log('Legacy license updated:', data);
       return this.convertDbToLicense(data);
     } catch (error) {
       console.error('Service error:', error);
@@ -641,6 +695,7 @@ export const legacyLicensesService = {
 
   async delete(id: string): Promise<void> {
     try {
+      console.log('Deleting legacy license:', id);
       const { error } = await supabase
         .from('legacy_licenses')
         .delete()
@@ -650,6 +705,8 @@ export const legacyLicensesService = {
         console.error('Error deleting legacy license:', error);
         throw new Error(`Erro ao excluir licença legada: ${error.message}`);
       }
+      
+      console.log('Legacy license deleted');
     } catch (error) {
       console.error('Service error:', error);
       throw error;
@@ -662,8 +719,8 @@ export const legacyLicensesService = {
       name: dbLicense.name,
       type: dbLicense.type as any,
       isActive: dbLicense.is_active,
-      expirationDate: dbLicense.expiration_date,
-      cost: dbLicense.cost,
+      expirationDate: dbLicense.expiration_date || undefined,
+      cost: dbLicense.cost || 0,
       notes: dbLicense.notes || '',
       createdAt: dbLicense.created_at,
       updatedAt: dbLicense.updated_at,

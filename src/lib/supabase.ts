@@ -4,10 +4,34 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.error('Missing Supabase environment variables:', {
+    url: !!supabaseUrl,
+    key: !!supabaseAnonKey
+  });
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+console.log('Supabase configuration:', {
+  url: supabaseUrl,
+  hasKey: !!supabaseAnonKey
+});
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
+
+// Test connection
+supabase.from('microsoft365_pools').select('count', { count: 'exact', head: true })
+  .then(({ error, count }) => {
+    if (error) {
+      console.error('Supabase connection test failed:', error);
+    } else {
+      console.log('Supabase connection successful. Tables accessible.');
+    }
+  });
 
 // Database types
 export interface DatabaseMicrosoft365Pool {
@@ -16,9 +40,9 @@ export interface DatabaseMicrosoft365Pool {
   total_licenses: number;
   assigned_licenses: number;
   available_licenses: number;
-  cost?: number;
-  expiration_date?: string;
-  notes?: string;
+  cost?: number | null;
+  expiration_date?: string | null;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,9 +64,9 @@ export interface DatabaseLicensePool {
   total_licenses: number;
   assigned_licenses: number;
   available_licenses: number;
-  cost?: number;
-  expiration_date?: string;
-  notes?: string;
+  cost?: number | null;
+  expiration_date?: string | null;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,13 +75,13 @@ export interface DatabaseLicenseAssignment {
   id: string;
   type: 'sophos' | 'server' | 'windows';
   pool_id: string;
-  device_name?: string;
-  server_name?: string;
-  user_email?: string;
-  serial_number?: string;
-  license_key?: string;
+  device_name?: string | null;
+  server_name?: string | null;
+  user_email?: string | null;
+  serial_number?: string | null;
+  license_key?: string | null;
   is_active: boolean;
-  notes?: string;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,21 +91,21 @@ export interface DatabaseLegacyLicense {
   name: string;
   type: 'microsoft365' | 'sophos' | 'server' | 'windows';
   is_active: boolean;
-  expiration_date?: string;
-  cost?: number;
-  notes?: string;
-  plan_type?: string;
-  assigned_user?: string;
-  user_email?: string;
-  product_type?: string;
-  device_count?: number;
-  serial_number?: string;
-  product_name?: string;
-  version?: string;
-  server_name?: string;
-  license_key?: string;
-  windows_type?: string;
-  device_name?: string;
+  expiration_date?: string | null;
+  cost?: number | null;
+  notes?: string | null;
+  plan_type?: string | null;
+  assigned_user?: string | null;
+  user_email?: string | null;
+  product_type?: string | null;
+  device_count?: number | null;
+  serial_number?: string | null;
+  product_name?: string | null;
+  version?: string | null;
+  server_name?: string | null;
+  license_key?: string | null;
+  windows_type?: string | null;
+  device_name?: string | null;
   created_at: string;
   updated_at: string;
 }
