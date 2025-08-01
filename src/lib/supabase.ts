@@ -8,30 +8,41 @@ if (!supabaseUrl || !supabaseAnonKey) {
     url: !!supabaseUrl,
     key: !!supabaseAnonKey
   });
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  console.warn('Supabase environment variables are missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
 }
 
-console.log('Supabase configuration:', {
-  url: supabaseUrl,
-  hasKey: !!supabaseAnonKey
-});
+// Only create client if environment variables are present
+const supabaseClient = supabaseUrl && supabaseAnonKey ? 
+  createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  }) : null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+export const supabase = supabaseClient;
 
-// Test connection
-supabase.from('microsoft365_pools').select('count', { count: 'exact', head: true })
-  .then(({ error, count }) => {
-    if (error) {
-      console.error('Supabase connection test failed:', error);
-    } else {
-      console.log('Supabase connection successful. Tables accessible.');
-    }
+// Test connection only if client exists
+if (supabase) {
+  console.log('Supabase configuration:', {
+    url: supabaseUrl,
+    hasKey: !!supabaseAnonKey
   });
+  
+  supabase.from('microsoft365_pools').select('count', { count: 'exact', head: true })
+    .then(({ error, count }) => {
+      if (error) {
+        console.error('Supabase connection test failed:', error);
+      } else {
+        console.log('Supabase connection successful. Tables accessible.');
+      }
+    })
+    .catch((error) => {
+      console.error('Supabase connection test error:', error);
+    });
+} else {
+  console.warn('Supabase client not initialized due to missing environment variables.');
+}
 
 // Database types
 export interface DatabaseMicrosoft365Pool {

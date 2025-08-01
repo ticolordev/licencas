@@ -14,6 +14,13 @@ import type {
   License
 } from '@/types/license';
 
+// Helper function to check if Supabase is available
+const checkSupabaseConnection = () => {
+  if (!supabase) {
+    throw new Error('Supabase não está configurado. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no arquivo .env');
+  }
+};
+
 // Conversion functions
 function convertDbToMicrosoft365Pool(dbPool: DatabaseMicrosoft365Pool): Microsoft365LicensePool {
   return {
@@ -139,6 +146,7 @@ function convertLicenseAssignmentToDb(assignment: Partial<LicenseAssignment>): P
 export const microsoft365PoolsService = {
   async getAll(): Promise<Microsoft365LicensePool[]> {
     try {
+      checkSupabaseConnection();
       console.log('Fetching Microsoft 365 pools...');
       const { data, error } = await supabase
         .from('microsoft365_pools')
@@ -160,6 +168,7 @@ export const microsoft365PoolsService = {
 
   async create(pool: Partial<Microsoft365LicensePool>): Promise<Microsoft365LicensePool> {
     try {
+      checkSupabaseConnection();
       console.log('Creating Microsoft 365 pool:', pool);
       
       // Ensure required fields and defaults
@@ -196,6 +205,7 @@ export const microsoft365PoolsService = {
 
   async update(id: string, pool: Partial<Microsoft365LicensePool>): Promise<Microsoft365LicensePool> {
     try {
+      checkSupabaseConnection();
       console.log('Updating Microsoft 365 pool:', id, pool);
       const dbPool = convertMicrosoft365PoolToDb(pool);
       
@@ -221,6 +231,7 @@ export const microsoft365PoolsService = {
 
   async delete(id: string): Promise<void> {
     try {
+      checkSupabaseConnection();
       console.log('Deleting Microsoft 365 pool:', id);
       const { error } = await supabase
         .from('microsoft365_pools')
@@ -244,6 +255,7 @@ export const microsoft365PoolsService = {
 export const microsoft365UsersService = {
   async getAll(): Promise<Microsoft365User[]> {
     try {
+      checkSupabaseConnection();
       console.log('Fetching Microsoft 365 users...');
       const { data, error } = await supabase
         .from('microsoft365_users')
@@ -265,6 +277,7 @@ export const microsoft365UsersService = {
 
   async create(user: Partial<Microsoft365User>): Promise<Microsoft365User> {
     try {
+      checkSupabaseConnection();
       console.log('Creating Microsoft 365 user:', user);
       
       // Ensure required fields and defaults
@@ -298,6 +311,7 @@ export const microsoft365UsersService = {
 
   async update(id: string, user: Partial<Microsoft365User>): Promise<Microsoft365User> {
     try {
+      checkSupabaseConnection();
       console.log('Updating Microsoft 365 user:', id, user);
       const dbUser = convertMicrosoft365UserToDb(user);
       
@@ -323,6 +337,7 @@ export const microsoft365UsersService = {
 
   async delete(id: string): Promise<void> {
     try {
+      checkSupabaseConnection();
       console.log('Deleting Microsoft 365 user:', id);
       const { error } = await supabase
         .from('microsoft365_users')
@@ -346,6 +361,7 @@ export const microsoft365UsersService = {
 export const licensePoolsService = {
   async getAll(): Promise<LicensePool[]> {
     try {
+      checkSupabaseConnection();
       console.log('Fetching license pools...');
       const { data, error } = await supabase
         .from('license_pools')
@@ -367,6 +383,7 @@ export const licensePoolsService = {
 
   async create(pool: Partial<LicensePool>): Promise<LicensePool> {
     try {
+      checkSupabaseConnection();
       console.log('Creating license pool:', pool);
       
       // Ensure required fields and defaults
@@ -403,6 +420,7 @@ export const licensePoolsService = {
 
   async update(id: string, pool: Partial<LicensePool>): Promise<LicensePool> {
     try {
+      checkSupabaseConnection();
       console.log('Updating license pool:', id, pool);
       const dbPool = convertLicensePoolToDb(pool);
       
@@ -428,6 +446,7 @@ export const licensePoolsService = {
 
   async delete(id: string): Promise<void> {
     try {
+      checkSupabaseConnection();
       console.log('Deleting license pool:', id);
       const { error } = await supabase
         .from('license_pools')
@@ -451,6 +470,7 @@ export const licensePoolsService = {
 export const licenseAssignmentsService = {
   async getAll(): Promise<LicenseAssignment[]> {
     try {
+      checkSupabaseConnection();
       console.log('Fetching license assignments...');
       const { data, error } = await supabase
         .from('license_assignments')
@@ -472,6 +492,7 @@ export const licenseAssignmentsService = {
 
   async create(assignment: Partial<LicenseAssignment>): Promise<LicenseAssignment> {
     try {
+      checkSupabaseConnection();
       console.log('Creating license assignment:', assignment);
       
       // Ensure required fields and defaults
@@ -505,6 +526,7 @@ export const licenseAssignmentsService = {
 
   async update(id: string, assignment: Partial<LicenseAssignment>): Promise<LicenseAssignment> {
     try {
+      checkSupabaseConnection();
       console.log('Updating license assignment:', id, assignment);
       const dbAssignment = convertLicenseAssignmentToDb(assignment);
       
@@ -530,6 +552,7 @@ export const licenseAssignmentsService = {
 
   async delete(id: string): Promise<void> {
     try {
+      checkSupabaseConnection();
       console.log('Deleting license assignment:', id);
       const { error } = await supabase
         .from('license_assignments')
@@ -553,6 +576,7 @@ export const licenseAssignmentsService = {
 export const legacyLicensesService = {
   async getAll(): Promise<License[]> {
     try {
+      checkSupabaseConnection();
       console.log('Fetching legacy licenses...');
       const { data, error } = await supabase
         .from('legacy_licenses')
@@ -574,6 +598,7 @@ export const legacyLicensesService = {
 
   async create(license: Partial<License>): Promise<License> {
     try {
+      checkSupabaseConnection();
       console.log('Creating legacy license:', license);
       
       // Ensure required fields and defaults
@@ -639,6 +664,7 @@ export const legacyLicensesService = {
 
   async update(id: string, license: Partial<License>): Promise<License> {
     try {
+      checkSupabaseConnection();
       console.log('Updating legacy license:', id, license);
       
       const dbLicense: Partial<DatabaseLegacyLicense> = {
@@ -695,6 +721,7 @@ export const legacyLicensesService = {
 
   async delete(id: string): Promise<void> {
     try {
+      checkSupabaseConnection();
       console.log('Deleting legacy license:', id);
       const { error } = await supabase
         .from('legacy_licenses')
