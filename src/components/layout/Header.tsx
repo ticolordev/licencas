@@ -1,7 +1,15 @@
 import React from 'react';
-import { Search, Plus, Menu } from 'lucide-react';
+import { Search, Plus, Menu, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   searchTerm: string;
@@ -9,6 +17,7 @@ interface HeaderProps {
   onAddLicense: () => void;
   onToggleSidebar: () => void;
   selectedCategory: string;
+  onShowAdminPanel: () => void;
 }
 
 const categoryLabels = {
@@ -24,8 +33,11 @@ export function Header({
   onSearchChange, 
   onAddLicense, 
   onToggleSidebar,
-  selectedCategory 
+  selectedCategory,
+  onShowAdminPanel
 }: HeaderProps) {
+  const { logout, state } = useAuth();
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
       <div className="flex items-center justify-between">
@@ -49,6 +61,38 @@ export function Header({
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {state.user?.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="hidden md:block text-sm font-medium text-gray-700">
+                  {state.user?.name}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-3 py-2">
+                <p className="text-sm font-medium">{state.user?.name}</p>
+                <p className="text-xs text-gray-500">{state.user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onShowAdminPanel}>
+                <Settings className="h-4 w-4 mr-2" />
+                Painel Administrativo
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout} className="text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {!['dashboard', 'microsoft365', 'sophos', 'server', 'windows'].includes(selectedCategory) && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />

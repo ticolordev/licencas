@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { LoginPage } from '@/components/auth/LoginPage';
+import { AdminPanel } from '@/components/admin/AdminPanel';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Dashboard } from '@/components/dashboard/Dashboard';
@@ -20,6 +23,7 @@ const categoryTitles = {
 };
 
 function AppContent() {
+  const { state: authState } = useAuth();
   const { 
     state, 
     dispatch, 
@@ -32,6 +36,60 @@ function AppContent() {
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  // Show login page if not authenticated
+  if (!authState.isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Show admin panel if requested
+  if (showAdminPanel) {
+    return (
+      <div className="flex h-screen bg-gray-50 overflow-hidden">
+        {/* Mobile Sidebar Overlay */}
+        {isMobileSidebarOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={toggleMobileSidebar} />
+        )}
+
+        {/* Sidebar */}
+        <div className={`${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed md:relative md:translate-x-0 z-50 transition-transform duration-300 md:block`}>
+          <Sidebar
+            selectedCategory="admin"
+            onCategoryChange={(category) => {
+              if (category !== 'admin') {
+                setShowAdminPanel(false);
+                handleCategoryChange(category);
+              }
+            }}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={toggleSidebarCollapse}
+            onShowAdminPanel={handleShowAdminPanel}
+            onShowAdminPanel={() => setShowAdminPanel(true)}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <Header
+            searchTerm=""
+            onSearchChange={() => {}}
+            onAddLicense={() => {}}
+            onToggleSidebar={toggleMobileSidebar}
+            selectedCategory="admin"
+            onShowAdminPanel={handleShowAdminPanel}
+            onShowAdminPanel={() => setShowAdminPanel(true)}
+          />
+
+          <main className="flex-1 overflow-y-auto p-6">
+            <AdminPanel />
+          </main>
+        </div>
+
+        <Toaster position="top-right" />
+      </div>
+    );
+  }
 
   const handleAddLicense = () => {
     setEditingLicense(null);
@@ -83,6 +141,10 @@ function AppContent() {
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const handleShowAdminPanel = () => {
+    setShowAdminPanel(true);
   };
 
   const filteredLicenses = getFilteredLicenses();
@@ -188,9 +250,11 @@ function AppContent() {
 
 function App() {
   return (
-    <LicenseProvider>
-      <AppContent />
-    </LicenseProvider>
+    <AuthProvider>
+      <LicenseProvider>
+        <AppContent />
+      </LicenseProvider>
+    </AuthProvider>
   );
 }
 
