@@ -17,7 +17,6 @@ interface HeaderProps {
   onAddLicense: () => void;
   onToggleSidebar: () => void;
   selectedCategory: string;
-  onShowAdminPanel: () => void;
 }
 
 const categoryLabels = {
@@ -26,6 +25,7 @@ const categoryLabels = {
   sophos: 'Licenças Sophos',
   server: 'Licenças de Servidores',
   windows: 'Licenças Windows',
+  admin: 'Painel Administrativo',
 };
 
 export function Header({ 
@@ -34,7 +34,6 @@ export function Header({
   onAddLicense, 
   onToggleSidebar,
   selectedCategory,
-  onShowAdminPanel
 }: HeaderProps) {
   const { logout, state } = useAuth();
 
@@ -81,11 +80,6 @@ export function Header({
                 <p className="text-xs text-gray-500">{state.user?.email}</p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onShowAdminPanel}>
-                <Settings className="h-4 w-4 mr-2" />
-                Painel Administrativo
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-red-600">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
@@ -105,7 +99,7 @@ export function Header({
             </div>
           )}
           
-          {!['dashboard', 'microsoft365', 'sophos', 'server', 'windows'].includes(selectedCategory) && (
+          {!['dashboard', 'microsoft365', 'sophos', 'server', 'windows', 'admin'].includes(selectedCategory) && (
             <Button onClick={onAddLicense} className="bg-blue-600 hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Licença

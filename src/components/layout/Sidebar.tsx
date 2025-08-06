@@ -17,7 +17,6 @@ interface SidebarProps {
   onCategoryChange: (category: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  onShowAdminPanel: () => void;
 }
 
 const menuItems = [
@@ -46,9 +45,14 @@ const menuItems = [
     label: 'Windows',
     icon: Monitor,
   },
+  {
+    id: 'admin',
+    label: 'Admin',
+    icon: Settings,
+  },
 ];
 
-export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onToggleCollapse, onShowAdminPanel }: SidebarProps) {
+export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onToggleCollapse }: SidebarProps) {
   return (
     <div
       className={cn(
@@ -100,24 +104,6 @@ export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onTog
               </li>
             );
           })}
-          
-          {/* Admin Panel Button */}
-          <li className="mt-4 pt-4 border-t border-gray-200">
-            <button
-              onClick={onShowAdminPanel}
-              className={cn(
-                'w-full flex items-center p-3 rounded-lg text-left transition-colors duration-200',
-                selectedCategory === 'admin'
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              )}
-            >
-              <Settings className={cn('h-5 w-5', isCollapsed ? 'mx-auto' : 'mr-3')} />
-              {!isCollapsed && (
-                <span className="font-medium">Admin</span>
-              )}
-            </button>
-          </li>
         </ul>
       </nav>
 

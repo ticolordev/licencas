@@ -36,59 +36,10 @@ function AppContent() {
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   // Show login page if not authenticated
   if (!authState.isAuthenticated) {
     return <LoginPage />;
-  }
-
-  // Show admin panel if requested
-  if (showAdminPanel) {
-    return (
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
-        {/* Mobile Sidebar Overlay */}
-        {isMobileSidebarOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={toggleMobileSidebar} />
-        )}
-
-        {/* Sidebar */}
-        <div className={`${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed md:relative md:translate-x-0 z-50 transition-transform duration-300 md:block`}>
-          <Sidebar
-            selectedCategory="admin"
-            onCategoryChange={(category) => {
-              if (category !== 'admin') {
-                setShowAdminPanel(false);
-                handleCategoryChange(category);
-              }
-            }}
-            isCollapsed={isSidebarCollapsed}
-            onToggleCollapse={toggleSidebarCollapse}
-            onShowAdminPanel={handleShowAdminPanel}
-            onShowAdminPanel={() => setShowAdminPanel(true)}
-          />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <Header
-            searchTerm=""
-            onSearchChange={() => {}}
-            onAddLicense={() => {}}
-            onToggleSidebar={toggleMobileSidebar}
-            selectedCategory="admin"
-            onShowAdminPanel={handleShowAdminPanel}
-            onShowAdminPanel={() => setShowAdminPanel(true)}
-          />
-
-          <main className="flex-1 overflow-y-auto p-6">
-            <AdminPanel />
-          </main>
-        </div>
-
-        <Toaster position="top-right" />
-      </div>
-    );
   }
 
   const handleAddLicense = () => {
@@ -143,10 +94,6 @@ function AppContent() {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
-  const handleShowAdminPanel = () => {
-    setShowAdminPanel(true);
-  };
-
   const filteredLicenses = getFilteredLicenses();
 
   const renderMainContent = () => {
@@ -188,6 +135,8 @@ function AppContent() {
         return <GenericLicenseDashboard licenseType="server" title="Licenças de Servidores" />;
       case 'windows':
         return <GenericLicenseDashboard licenseType="windows" title="Licenças Windows" />;
+      case 'admin':
+        return <AdminPanel />;
       default:
         return (
           <LicenseTable
@@ -233,7 +182,7 @@ function AppContent() {
       </div>
 
       {/* License Modal */}
-      {!['microsoft365', 'sophos', 'server', 'windows'].includes(state.selectedCategory) && (
+      {!['microsoft365', 'sophos', 'server', 'windows', 'admin'].includes(state.selectedCategory) && (
         <LicenseModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}

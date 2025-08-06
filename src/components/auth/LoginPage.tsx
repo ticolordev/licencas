@@ -108,20 +108,6 @@ export function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-white/20">
-            <div className="bg-blue-500/20 rounded-lg p-4">
-              <h3 className="text-white font-medium mb-2 flex items-center">
-                <User className="w-4 h-4 mr-2" />
-                Credenciais de Demonstração
-              </h3>
-              <div className="text-blue-100 text-sm space-y-1">
-                <p><strong>Email:</strong> admin@sistema.com</p>
-                <p><strong>Senha:</strong> admin123</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
