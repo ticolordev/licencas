@@ -136,7 +136,14 @@ function AppContent() {
       case 'windows':
         return <GenericLicenseDashboard licenseType="windows" title="Licenças Windows" />;
       case 'admin':
-        return <AdminPanel />;
+        return authState.user?.is_admin ? <AdminPanel /> : (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Acesso Negado</h2>
+              <p className="text-gray-600">Você não tem permissão para acessar esta área.</p>
+            </div>
+          </div>
+        );
       default:
         return (
           <LicenseTable

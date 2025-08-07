@@ -13,6 +13,7 @@ interface AdminUser {
   email: string;
   name: string;
   is_active: boolean;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +31,7 @@ function UserModal({ isOpen, onClose, user, onSave }: UserModalProps) {
     email: '',
     password: '',
     is_active: true,
+    is_admin: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +43,7 @@ function UserModal({ isOpen, onClose, user, onSave }: UserModalProps) {
         email: user.email,
         password: '',
         is_active: user.is_active,
+        is_admin: user.is_admin,
       });
     } else {
       setFormData({
@@ -48,6 +51,7 @@ function UserModal({ isOpen, onClose, user, onSave }: UserModalProps) {
         email: '',
         password: '',
         is_active: true,
+        is_admin: false,
       });
     }
   }, [user, isOpen]);
@@ -146,6 +150,16 @@ function UserModal({ isOpen, onClose, user, onSave }: UserModalProps) {
               disabled={isSubmitting}
             />
             <Label htmlFor="is_active">Usuário Ativo</Label>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_admin"
+              checked={formData.is_admin}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_admin: checked }))}
+              disabled={isSubmitting}
+            />
+            <Label htmlFor="is_admin">Administrador</Label>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">
@@ -287,7 +301,21 @@ function PasswordModal({ isOpen, onClose, user, onSave }: PasswordModalProps) {
 }
 
 export function AdminPanel() {
+  const { state: authState } = useAuth();
   const { createUser, updateUser, deleteUser, changePassword, getAllUsers } = useAuth();
+
+  // Check if current user is admin
+  if (!authState.user?.is_admin) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Acesso Negado</h2>
+          <p className="text-gray-600">Você não tem permissão para acessar esta área.</p>
+        </div>
+      </div>
+    );
+  }
+
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -412,6 +440,7 @@ export function AdminPanel() {
                   <tr>
                     <th className="text-left p-4 font-medium text-gray-700">Nome</th>
                     <th className="text-left p-4 font-medium text-gray-700">Email</th>
+                    <th className="text-left p-4 font-medium text-gray-700">Tipo</th>
                     <th className="text-left p-4 font-medium text-gray-700">Status</th>
                     <th className="text-left p-4 font-medium text-gray-700">Criado em</th>
                     <th className="text-right p-4 font-medium text-gray-700">Ações</th>
@@ -426,11 +455,27 @@ export function AdminPanel() {
                       <td className="p-4 text-gray-600">{user.email}</td>
                       <td className="p-4">
                         <Badge 
+                          variant={user.is_admin ? 'default' : 'secondary'}
+                          className={user.is_admin ? 'bg-blue-100 text-blue-800 border-blue-200' : 'bg-gray-100 text-gray-800 border-gray-200'}
+                        >
+                          {user.is_admin ? 'Administrador' : 'Usuário'}
+                        </Badge>
+                      </td>
+                      <td className="p-4">
+                        <Badge 
                           variant={user.is_active ? 'default' : 'secondary'}
                           className={user.is_active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}
                         >
                           {user.is_active ? 'Ativo' : 'Inativo'}
                         </Badge>
+                        {user.is_admin && (
+                          <Badge 
+                            variant="outline"
+                            className="ml-2 bg-blue-100 text-blue-800 border-blue-200"
+                          >
+                            Admin
+                          </Badge>
+                        )}
                       </td>
                       <td className="p-4 text-gray-600 text-sm">
                         {formatDate(user.created_at)}
