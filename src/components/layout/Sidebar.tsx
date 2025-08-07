@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   selectedCategory: string;
@@ -53,6 +54,8 @@ const menuItems = [
 ];
 
 export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onToggleCollapse }: SidebarProps) {
+  const { state: authState } = useAuth();
+
   return (
     <div
       className={cn(
@@ -81,7 +84,13 @@ export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onTog
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {menuItems.filter((item) => {
+            // Only show Admin menu item to admin users
+            if (item.id === 'admin') {
+              return authState.user?.is_admin === true;
+            }
+            return true;
+          }).map((item) => {
             const Icon = item.icon;
             const isActive = selectedCategory === item.id;
             

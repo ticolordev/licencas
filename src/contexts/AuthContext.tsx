@@ -7,6 +7,7 @@ interface AdminUser {
   email: string;
   name: string;
   is_active: boolean;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -21,7 +22,7 @@ interface AuthContextType {
   state: AuthState;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  createUser: (userData: { email: string; password: string; name: string }) => Promise<void>;
+  createUser: (userData: { email: string; password: string; name: string; is_admin?: boolean }) => Promise<void>;
   updateUser: (id: string, userData: Partial<AdminUser>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   changePassword: (id: string, newPassword: string) => Promise<void>;
@@ -118,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.email,
         name: data.name,
         is_active: data.is_active,
+        is_admin: data.is_admin || false,
         created_at: data.created_at,
         updated_at: data.updated_at,
       };
@@ -150,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast.success('Logout realizado com sucesso!');
   };
 
-  const createUser = async (userData: { email: string; password: string; name: string }) => {
+  const createUser = async (userData: { email: string; password: string; name: string; is_admin?: boolean }) => {
     try {
       if (!supabase) {
         throw new Error('Sistema não configurado');
@@ -165,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password_hash: passwordHash,
           name: userData.name,
           is_active: true,
+          is_admin: userData.is_admin || false,
         });
 
       if (error) {
@@ -191,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: userData.email,
           name: userData.name,
           is_active: userData.is_active,
+          is_admin: userData.is_admin,
         })
         .eq('id', id);
 
@@ -274,6 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: user.email,
         name: user.name,
         is_active: user.is_active,
+        is_admin: user.is_admin || false,
         created_at: user.created_at,
         updated_at: user.updated_at,
       }));
