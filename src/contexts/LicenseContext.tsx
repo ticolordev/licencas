@@ -183,6 +183,12 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
 
+      // Check if Supabase is configured
+      if (!supabase) {
+        dispatch({ type: 'SET_ERROR', payload: 'Sistema não configurado. Configure as variáveis de ambiente do Supabase no arquivo .env' });
+        return;
+      }
+
       const [
         licenses,
         microsoft365Pools,
@@ -204,8 +210,14 @@ export function LicenseProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'LOAD_LICENSE_ASSIGNMENTS', payload: licenseAssignments });
     } catch (error) {
       console.error('Error loading data:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Erro ao carregar dados' });
-      toast.error('Erro ao carregar dados do banco');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar dados';
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
+      
+      if (errorMessage.includes('Supabase não está configurado')) {
+        toast.error('Configure o Supabase no arquivo .env para usar o sistema');
+      } else {
+        toast.error('Erro ao carregar dados do banco');
+      }
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }

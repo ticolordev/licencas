@@ -8,40 +8,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
     url: !!supabaseUrl,
     key: !!supabaseAnonKey
   });
-  console.warn('Supabase environment variables are missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+  console.warn('Supabase environment variables are missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file with your actual Supabase project credentials.');
 }
 
-// Only create client if environment variables are present
-const supabaseClient = supabaseUrl && supabaseAnonKey ? 
-  createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  }) : null;
+// Create a mock client if environment variables are missing (for development)
+const supabaseClient = supabaseUrl && supabaseAnonKey && 
+  supabaseUrl !== 'your_supabase_project_url_here' && 
+  supabaseAnonKey !== 'your_supabase_anon_key_here' ? 
+    createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    }) : null;
 
 export const supabase = supabaseClient;
 
-// Test connection only if client exists
+// Log connection status
 if (supabase) {
-  console.log('Supabase configuration:', {
-    url: supabaseUrl,
-    hasKey: !!supabaseAnonKey
-  });
-  
-  supabase.from('microsoft365_pools').select('count', { count: 'exact', head: true })
-    .then(({ error, count }) => {
-      if (error) {
-        console.error('Supabase connection test failed:', error);
-      } else {
-        console.log('Supabase connection successful. Tables accessible.');
-      }
-    })
-    .catch((error) => {
-      console.error('Supabase connection test error:', error);
-    });
+  console.log('✅ Supabase client initialized successfully');
 } else {
-  console.warn('Supabase client not initialized due to missing environment variables.');
+  console.warn('⚠️ Supabase client not initialized. Please configure your environment variables in the .env file.');
 }
 
 // Database types

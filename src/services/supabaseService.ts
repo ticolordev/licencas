@@ -17,7 +17,7 @@ import type {
 // Helper function to check if Supabase is available
 const checkSupabaseConnection = () => {
   if (!supabase) {
-    throw new Error('Supabase não está configurado. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no arquivo .env');
+    throw new Error('Supabase não está configurado. Por favor, configure as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no arquivo .env com suas credenciais reais do Supabase.');
   }
 };
 

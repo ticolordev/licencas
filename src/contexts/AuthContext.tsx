@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       if (!supabase) {
-        toast.error('Sistema não configurado corretamente');
+        toast.error('Sistema não configurado. Configure as variáveis do Supabase no arquivo .env');
         return false;
       }
 
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const createUser = async (userData: { email: string; password: string; name: string; is_admin?: boolean }) => {
     try {
       if (!supabase) {
-        throw new Error('Sistema não configurado');
+        throw new Error('Sistema não configurado. Configure as variáveis do Supabase no arquivo .env');
       }
 
       const passwordHash = await hashPassword(userData.password);
@@ -185,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = async (id: string, userData: Partial<AdminUser>) => {
     try {
       if (!supabase) {
-        throw new Error('Sistema não configurado');
+        throw new Error('Sistema não configurado. Configure as variáveis do Supabase no arquivo .env');
       }
 
       const { error } = await supabase
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const deleteUser = async (id: string) => {
     try {
       if (!supabase) {
-        throw new Error('Sistema não configurado');
+        throw new Error('Sistema não configurado. Configure as variáveis do Supabase no arquivo .env');
       }
 
       const { error } = await supabase
@@ -236,7 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const changePassword = async (id: string, newPassword: string) => {
     try {
       if (!supabase) {
-        throw new Error('Sistema não configurado');
+        throw new Error('Sistema não configurado. Configure as variáveis do Supabase no arquivo .env');
       }
 
       const passwordHash = await hashPassword(newPassword);
@@ -261,7 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getAllUsers = async (): Promise<AdminUser[]> => {
     try {
       if (!supabase) {
-        throw new Error('Sistema não configurado');
+        throw new Error('Sistema não configurado. Configure as variáveis do Supabase no arquivo .env');
       }
 
       const { data, error } = await supabase
