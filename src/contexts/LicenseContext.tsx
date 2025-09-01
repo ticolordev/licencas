@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useCallback, useEffect } from 'react';
 import { License, LicenseStats, Microsoft365LicensePool, Microsoft365User, LicensePool, LicenseAssignment } from '@/types/license';
 import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import {
   microsoft365PoolsService,
   microsoft365UsersService,
