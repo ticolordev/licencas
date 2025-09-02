@@ -60,6 +60,16 @@ export function Header({
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Logout Button */}
+          <Button
+            variant="outline"
+            onClick={logout}
+            className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:block">Sair</span>
+          </Button>
+
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
