@@ -7,7 +7,8 @@ import {
   Monitor,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,7 @@ const menuItems = [
 ];
 
 export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onToggleCollapse }: SidebarProps) {
-  const { state: authState } = useAuth();
+  const { state: authState, logout } = useAuth();
 
   return (
     <div
@@ -114,6 +115,22 @@ export function Sidebar({ selectedCategory, onCategoryChange, isCollapsed, onTog
             );
           })}
         </ul>
+
+        {/* Logout Button */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <button
+            onClick={logout}
+            className={cn(
+              'w-full flex items-center p-3 rounded-lg text-left transition-colors duration-200',
+              'text-red-600 hover:bg-red-50 hover:text-red-700'
+            )}
+          >
+            <LogOut className={cn('h-5 w-5', isCollapsed ? 'mx-auto' : 'mr-3')} />
+            {!isCollapsed && (
+              <span className="font-medium">Sair</span>
+            )}
+          </button>
+        </div>
       </nav>
 
       {/* Footer */}

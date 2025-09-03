@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Menu, LogOut } from 'lucide-react';
+import { Search, Plus, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +35,7 @@ export function Header({
   onToggleSidebar,
   selectedCategory,
 }: HeaderProps) {
-  const { logout, state } = useAuth();
+  const { state } = useAuth();
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
@@ -60,16 +60,6 @@ export function Header({
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Logout Button */}
-          <Button
-            variant="outline"
-            onClick={logout}
-            className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:block">Sair</span>
-          </Button>
-
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -89,11 +79,6 @@ export function Header({
                 <p className="text-sm font-medium">{state.user?.name}</p>
                 <p className="text-xs text-gray-500">{state.user?.email}</p>
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
