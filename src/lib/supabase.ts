@@ -11,16 +11,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Supabase environment variables are missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file with your actual Supabase project credentials.');
 }
 
-// Create a mock client if environment variables are missing (for development)
-const supabaseClient = supabaseUrl && supabaseAnonKey && 
-  supabaseUrl !== 'your_supabase_project_url_here' && 
-  supabaseAnonKey !== 'your_supabase_anon_key_here' ? 
-    createClient(supabaseUrl, supabaseAnonKey, {
+// Create Supabase client only if environment variables are properly configured
+let supabaseClient = null;
+
+if (supabaseUrl && 
+    supabaseAnonKey && 
+    supabaseUrl !== 'your_supabase_project_url_here' && 
+    supabaseAnonKey !== 'your_supabase_anon_key_here') {
+  try {
+    supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        persistSession: false,
-        autoRefreshToken: false,
+        persistSession: true,
+        autoRefreshToken: true,
       },
-    }) : null;
+    });
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    supabaseClient = null;
+  }
+}
 
 export const supabase = supabaseClient;
 
